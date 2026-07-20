@@ -1,0 +1,31 @@
+{
+  "name": "fluexy-layerd",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspaces --if-present",
+    "build": "npm run build --workspaces --if-present",
+    "check-types": "npm run check-types --workspaces --if-present",
+    "dev:web": "npm run dev --workspace web",
+    "dev:api": "uv run --project apps/api uvicorn app:app --app-dir apps/api --host 127.0.0.1 --port 8000",
+    "db:push": "npm run db:push --workspace @fluexy-layerd/db",
+    "db:studio": "npm run db:studio --workspace @fluexy-layerd/db",
+    "db:generate": "npm run db:generate --workspace @fluexy-layerd/db",
+    "db:migrate": "npm run db:migrate --workspace @fluexy-layerd/db"
+  },
+  "packageManager": "npm@11.16.0",
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "zod": "^4.4.3",
+    "@fluexy-layerd/env": "*"
+  },
+  "devDependencies": {
+    "typescript": "^6",
+    "@types/node": "^22.13.14",
+    "@fluexy-layerd/config": "*"
+  }
+}

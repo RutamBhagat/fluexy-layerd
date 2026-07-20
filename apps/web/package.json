@@ -1,0 +1,39 @@
+{
+  "name": "web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --port 3001",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@fluexy-layerd/ui": "*",
+    "@swc/helpers": "^0.5.23",
+    "lucide-react": "^1.23.0",
+    "next": "^16.2.0",
+    "next-themes": "^0.4.6",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "sonner": "^2.0.7",
+    "babel-plugin-react-compiler": "^1.0.0",
+    "dotenv": "^17.4.2",
+    "zod": "^4.4.3",
+    "@fluexy-layerd/env": "*",
+    "@clerk/nextjs": "^7.5.12",
+    "ai": "^7.0.13",
+    "@ai-sdk/google": "^4.0.7",
+    "@ai-sdk/devtools": "^1.0.1",
+    "@ai-sdk/react": "^4.0.14",
+    "streamdown": "^2.5.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.2",
+    "@types/node": "^20",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "tailwindcss": "^4.3.2",
+    "typescript": "^6",
+    "@fluexy-layerd/config": "*"
+  }
+}

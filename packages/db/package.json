@@ -1,0 +1,30 @@
+{
+  "name": "@fluexy-layerd/db",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "default": "./src/*.ts"
+    }
+  },
+  "scripts": {
+    "db:push": "drizzle-kit push",
+    "db:generate": "drizzle-kit generate",
+    "db:studio": "drizzle-kit studio",
+    "db:migrate": "drizzle-kit migrate"
+  },
+  "devDependencies": {
+    "typescript": "^6",
+    "@fluexy-layerd/config": "*",
+    "drizzle-kit": "^0.31.10"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "zod": "^4.4.3",
+    "@fluexy-layerd/env": "*",
+    "drizzle-orm": "^0.45.2",
+    "@neondatabase/serverless": "^1.1.0"
+  }
+}
