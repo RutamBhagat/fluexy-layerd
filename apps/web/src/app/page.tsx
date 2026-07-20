@@ -7,9 +7,15 @@ import {
   ArrowLeft,
   ArrowRight,
   ArrowUp,
+  CircleDot,
   Download,
+  Eye,
+  Images,
+  Layers,
   LoaderCircle,
   Play,
+  Shuffle,
+  Sparkles,
 } from "lucide-react";
 
 import { env } from "@fluexy-layerd/env/web";
@@ -39,11 +45,17 @@ import {
 
 const apiUrl = env.NEXT_PUBLIC_LAYERD_API_URL;
 
-const directionIcons = {
+const presetIcons = {
   "slide-up": ArrowUp,
   "slide-down": ArrowDown,
   "slide-left": ArrowLeft,
   "slide-right": ArrowRight,
+  "fade-in": Eye,
+  "clean-build": Layers,
+  "bounce-in": Sparkles,
+  "collage-toss": Images,
+  "radial-explosion": CircleDot,
+  "chaotic-to-organized": Shuffle,
 };
 
 function getSvgSize(svg: string) {
@@ -141,7 +153,7 @@ export default function Home() {
     }
   }
 
-  const DirectionIcon = directionIcons[preset];
+  const PresetIcon = presetIcons[preset];
 
   return (
     <main className="mx-auto flex h-svh min-h-0 w-full max-w-7xl overflow-hidden p-4 sm:p-6">
@@ -152,13 +164,13 @@ export default function Home() {
               Motion preset
             </Label>
             <Select value={preset} onValueChange={selectPreset} disabled={!file || isRendering}>
-              <SelectTrigger id="motion-preset" className="w-44">
-                <DirectionIcon className="size-3.5" />
+              <SelectTrigger id="motion-preset" className="w-52">
+                <PresetIcon className="size-3.5" />
                 <SelectValue />
               </SelectTrigger>
               <SelectContent side="bottom" align="start" alignItemWithTrigger={false}>
                 {motionPresets.map((option) => {
-                  const Icon = directionIcons[option.value];
+                  const Icon = presetIcons[option.value];
                   return (
                     <SelectItem key={option.value} value={option.value}>
                       <Icon className="size-3.5" />
@@ -251,6 +263,7 @@ export default function Home() {
                   src={videoUrl}
                   controls
                   autoPlay
+                  loop
                   className="max-h-full max-w-full bg-black"
                 />
               ) : svg ? (

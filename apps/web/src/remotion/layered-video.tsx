@@ -1,12 +1,12 @@
 import { useMemo } from "react";
-import {
-  AbsoluteFill,
-  interpolate,
-  spring,
-  useCurrentFrame,
-  useVideoConfig,
-} from "remotion";
+import { AbsoluteFill, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
 
+import {
+  getMotionProgress,
+  getMotionTransform,
+  isPosterBuildPreset,
+  type MotionLayer,
+} from "./motion";
 import {
   entranceDurationInFrames,
   reconstructedHoldInFrames,
@@ -15,14 +15,9 @@ import {
   videoDurationInFrames,
 } from "./types";
 
-type Layer = {
-  id: string;
+type Layer = MotionLayer & {
   type: string;
   href: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
 };
 
 function parseLayers(svg: string): Layer[] {
@@ -49,6 +44,8 @@ function parseLayers(svg: string): Layer[] {
 }
 
 function sortLayers({ layers, preset }: { layers: Layer[]; preset: MotionPreset }) {
+  if (isPosterBuildPreset(preset)) return [...layers];
+
   return [...layers].sort((first, second) => {
     const firstX = first.x + first.width / 2;
     const secondX = second.x + second.width / 2;
@@ -58,7 +55,8 @@ function sortLayers({ layers, preset }: { layers: Layer[]; preset: MotionPreset 
     if (preset === "slide-up") return secondY - firstY;
     if (preset === "slide-down") return firstY - secondY;
     if (preset === "slide-left") return secondX - firstX;
-    return firstX - secondX;
+    if (preset === "slide-right") return firstX - secondX;
+    return 0;
   });
 }
 
@@ -80,34 +78,19 @@ function isBackground({
   );
 }
 
-function getStartOffset({
-  layer,
-  preset,
-  width,
-  height,
-}: {
-  layer: Layer;
-  preset: MotionPreset;
-  width: number;
-  height: number;
-}) {
-  if (preset === "slide-up") return { x: 0, y: height - layer.y + 24 };
-  if (preset === "slide-down") return { x: 0, y: -(layer.y + layer.height + 24) };
-  if (preset === "slide-left") return { x: width - layer.x + 24, y: 0 };
-  return { x: -(layer.x + layer.width + 24), y: 0 };
-}
-
 export function LayeredVideo({ svg, preset, width, height }: LayeredVideoProps) {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const layers = useMemo(() => parseLayers(svg), [svg]);
-  const movingLayers = useMemo(
-    () => layers.filter((layer) => !isBackground({ layer, width, height })),
-    [height, layers, width],
+  const buildsPoster = isPosterBuildPreset(preset);
+  const animatedLayers = useMemo(
+    () =>
+      buildsPoster ? layers : layers.filter((layer) => !isBackground({ layer, width, height })),
+    [buildsPoster, height, layers, width],
   );
   const orderedLayers = useMemo(
-    () => sortLayers({ layers: movingLayers, preset }),
-    [movingLayers, preset],
+    () => sortLayers({ layers: animatedLayers, preset }),
+    [animatedLayers, preset],
   );
   const order = new Map(orderedLayers.map((layer, index) => [layer.id, index]));
   const lastEntranceStart =
@@ -124,30 +107,43 @@ export function LayeredVideo({ svg, preset, width, height }: LayeredVideoProps) 
       >
         {layers.map((layer) => {
           const background = isBackground({ layer, width, height });
+          const staticBackground = background && !buildsPoster;
           const delay = (order.get(layer.id) ?? 0) * stagger;
-          const hasSettled = frame >= delay + entranceDurationInFrames;
-          const progress = background
+          const progress = staticBackground
             ? 1
-            : hasSettled
-              ? 1
-            : spring({
-                frame: frame - delay,
-                fps,
-                config: { damping: 18, mass: 0.7, stiffness: 130 },
+            : getMotionProgress({
+                preset,
+                frame,
+                delay,
                 durationInFrames: entranceDurationInFrames,
+                fps,
               });
-          const start = getStartOffset({ layer, preset, width, height });
-          const x = start.x * (1 - progress);
-          const y = start.y * (1 - progress);
-          const opacity = background
+          const transform = getMotionTransform({
+            layer,
+            preset,
+            progress,
+            width,
+            height,
+            background,
+          });
+          const centerX = layer.x + layer.width / 2;
+          const centerY = layer.y + layer.height / 2;
+          const opacity = staticBackground
             ? 1
-            : interpolate(progress, [0, 0.2], [0, 1], {
+            : interpolate(progress, [0, preset === "fade-in" ? 1 : 0.2], [0, 1], {
                 extrapolateLeft: "clamp",
                 extrapolateRight: "clamp",
               });
+          const transformValue = [
+            `translate(${transform.x} ${transform.y})`,
+            `rotate(${transform.rotation} ${centerX} ${centerY})`,
+            `translate(${centerX} ${centerY})`,
+            `scale(${transform.scale})`,
+            `translate(${-centerX} ${-centerY})`,
+          ].join(" ");
 
           return (
-            <g key={layer.id} transform={`translate(${x} ${y})`} opacity={opacity}>
+            <g key={layer.id} transform={transformValue} opacity={opacity}>
               <image
                 href={layer.href}
                 x={layer.x}
