@@ -7,6 +7,7 @@ export const env = createEnv({
 		DATABASE_URL: z.string().min(1),
 		CLERK_SECRET_KEY: z.string().min(1),
 		CORS_ORIGIN: z.url(),
+		LAYERD_API_URL: z.url().default("http://127.0.0.1:8000"),
 		NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
 	},
 	runtimeEnv: process.env,

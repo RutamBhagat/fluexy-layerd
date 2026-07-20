@@ -4,6 +4,7 @@ from typing import Annotated
 
 import torch
 from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from layerd import LayerDPipeline
 from PIL import Image, UnidentifiedImageError
@@ -28,6 +29,12 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3001"],
+    allow_methods=["POST"],
+    allow_headers=["*"],
+)
 
 
 @app.post("/convert")
