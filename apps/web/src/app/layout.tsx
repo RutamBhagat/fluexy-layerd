@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "fluexy-layerd",
-  description: "fluexy-layerd",
+  title: "LayerD Motion",
+  description: "Turn layered images into motion with Remotion.",
 };
 
 export default function RootLayout({
@@ -31,7 +31,7 @@ export default function RootLayout({
       >
         <ClerkProvider>
           <Providers>
-            <div className="grid grid-rows-[auto_1fr] h-svh">{children}</div>
+            <div className="h-svh min-h-0 overflow-hidden">{children}</div>
           </Providers>
         </ClerkProvider>
       </body>
