@@ -1,0 +1,23 @@
+[project]
+name = "fluexy-layerd-api"
+version = "0.1.0"
+description = "Local LayerD image-to-layered-SVG API"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+  "fastapi[standard]>=0.116",
+  "layerd",
+  "python-multipart>=0.0.20",
+  "transformers>=4.37,<5",
+]
+
+[dependency-groups]
+dev = [
+  "httpx>=0.28",
+  "pytest>=8.4",
+]
+
+[tool.uv.sources]
+layerd = { git = "https://github.com/CyberAgentAILab/LayerD.git", rev = "21aef937a0371614adb4d961f52d02409cb8ecc7" }
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
