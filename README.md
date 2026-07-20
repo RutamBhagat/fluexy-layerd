@@ -2,6 +2,12 @@
 
 Local web app and Python API for converting raster designs into self-contained layered SVGs using [LayerD](https://github.com/CyberAgentAILab/LayerD). Each SVG `<image>` element can be animated independently.
 
+## Why deterministic motion
+
+The app uses curated motion presets instead of LLM-generated animation code. Motion is a constrained, deterministic task here: layer geometry controls ordering and trajectories, seeded variation stays reproducible, and every animation resolves to the reconstructed source image. This produces more consistent and inspectable results than giving an LLM control of transforms or timing.
+
+For the same reason, the render path does not use an LLM evaluator. Output correctness can be checked directly through deterministic invariants such as valid layers, successful rendering, and exact final-frame reconstruction; a subjective model-based evaluation loop would add latency and variability without improving those guarantees.
+
 ## Setup
 
 Requires Node.js, npm, and [uv](https://docs.astral.sh/uv/).
