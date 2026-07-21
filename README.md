@@ -1,36 +1,60 @@
 # Fluexy LayerD
 
-Local web app and Python API for converting raster designs into self-contained layered SVGs using [LayerD](https://github.com/CyberAgentAILab/LayerD). Each SVG `<image>` element can be animated independently.
+Turn a flat raster design into a layered motion video. A local Python API uses [LayerD](https://github.com/CyberAgentAILab/LayerD) to produce a self-contained SVG, then the web app animates its layers with deterministic Remotion presets.
 
-## Why deterministic motion
+## How it works
 
-The app uses curated motion presets instead of LLM-generated animation code. Motion is a constrained, deterministic task here: layer geometry controls ordering and trajectories, seeded variation stays reproducible, and every animation resolves to the reconstructed source image. This produces more consistent and inspectable results than giving an LLM control of transforms or timing.
+```text
+image → LayerD API → layered SVG → Remotion preset → browser-rendered MP4
+```
 
-For the same reason, the render path does not use an LLM evaluator. Output correctness can be checked directly through deterministic invariants such as valid layers, successful rendering, and exact final-frame reconstruction; a subjective model-based evaluation loop would add latency and variability without improving those guarantees.
+1. Upload a PNG, JPEG, or WebP image.
+2. LayerD reconstructs it as independently positioned SVG image layers.
+3. Choose a motion preset and preview it with Remotion Player.
+4. Export an MP4 in the browser with WebCodecs.
+
+Rendered videos are temporary Blob URLs used for preview and download. They are not uploaded or persisted, and no FFmpeg render server is required.
+
+## Requirements
+
+- Node.js and npm
+- [uv](https://docs.astral.sh/uv/)
+- A browser with WebCodecs and H.264 encoding support
 
 ## Setup
-
-Requires Node.js, npm, and [uv](https://docs.astral.sh/uv/).
 
 ```bash
 npm install
 uv sync --project apps/api
 ```
 
-## Run
+Create `apps/web/.env` with your Clerk credentials:
 
-From the repository root, start each service in a separate terminal:
-
-```bash
-npm run dev:web  # http://localhost:3001
-npm run dev:api  # http://127.0.0.1:8000
+```dotenv
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=...
+CLERK_SECRET_KEY=...
 ```
 
-API documentation is available at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs). The first API startup downloads the model weights.
+`NEXT_PUBLIC_LAYERD_API_URL` defaults to `http://127.0.0.1:8000`.
 
-On Apple silicon, the API uses MPS automatically. LayerD does not explicitly document MPS support, but its models use standard PyTorch device APIs, so they work when PyTorch supports every required operation. Use `LAYERD_DEVICE=cpu npm run dev:api` if an MPS operation fails.
+## Run
 
-## Test the API
+Start both services from the repository root:
+
+```bash
+npm run dev:api  # http://127.0.0.1:8000
+npm run dev:web  # http://localhost:3001
+```
+
+The first API startup downloads the LayerD model weights. API documentation is available at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs).
+
+On Apple silicon, the API selects MPS when available. Use CPU if an operation is unsupported:
+
+```bash
+LAYERD_DEVICE=cpu npm run dev:api
+```
+
+## API example
 
 ```bash
 curl -X POST http://127.0.0.1:8000/convert \
@@ -40,60 +64,8 @@ curl -X POST http://127.0.0.1:8000/convert \
 
 The response content type is `image/svg+xml`.
 
-## Test
+## Design notes
 
-```bash
-uv run --project apps/api pytest apps/api/tests
-```
-## Concept
+Motion is a deterministic function of the layer, preset, frame, and canvas size. Curated presets keep output reproducible and ensure every animation resolves to the reconstructed design without generated animation code or an LLM evaluator.
 
-The most important idea is representation change. A flat raster image only contains final pixel colors. It does not say, “this region is a title,” “this is the background,” or “move this illustration independently.” LayerD reconstructs a manipulable scene representation: separate visual fragments with positions and dimensions.
-
-## Underlying Software Concept
-
-This is similar to converting a screenshot back into an approximate design document. Once the system has structure rather than undifferentiated pixels, code can control each component predictably.
-
-## Pipeline
-```bash
-one flat bitmap → SVG containing independently positioned image layers
-
----
-
-raster image → LayerD decomposition → layered SVG → per-layer transforms → Remotion frames → MP4
-```
-
-## Video dimensions
-
-H.264 requires even width and height because its common YUV 4:2:0 color format groups pixels into 2×2 blocks. Browser export rounds odd dimensions down to the previous even number and crops at most one edge pixel.
-
-## Concept
-The animation is a deterministic function:
-
-```
-visual state = f(layer, preset, frame, canvas size)
-```
-There is no continuously mutating animation state. Given the same SVG, preset, and frame number, Remotion produces the same visual result.
-
-## Underlying Software Concept
-
-This is pure, frame-based rendering. A frame can be rendered independently without replaying all previous frames. That makes previewing, seeking, retrying, and browser rendering predictable.
-
-## Underlying Software Concept
-
-This is the tradeoff between an open action space and a bounded action space:
-Arbitrary generated code offers greater creative variety.
-Validated presets offer reproducibility, safety, simpler testing, and guaranteed convergence.
-A hybrid system can let an LLM make semantic decisions while keeping execution constrained.
-
-```
-user intent → LLM planner → validated motion specification → deterministic renderer
-```
-
-## Underlying Software Concept
-
-This is the distinction between:
-Request execution: start with no durable memory, handle one request, disappear.
-Persistent model worker: keep weights and runtime resources warm across jobs.
-The LayerD backend benefits from persistence because it can keep the model weights loaded across requests.
-
-Video rendering runs entirely in the browser with WebCodecs. The completed MP4 remains a temporary Blob URL for preview and download, so the app does not upload or persist rendered videos.
+H.264 requires even dimensions because its common YUV 4:2:0 format groups pixels into 2×2 blocks. The exporter rounds odd dimensions down and crops at most one row or column, avoiding letterboxing.
