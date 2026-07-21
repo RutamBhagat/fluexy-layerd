@@ -45,3 +45,31 @@ The response content type is `image/svg+xml`.
 ```bash
 uv run --project apps/api pytest apps/api/tests
 ```
+## Concept
+
+The most important idea is representation change. A flat raster image only contains final pixel colors. It does not say, “this region is a title,” “this is the background,” or “move this illustration independently.” LayerD reconstructs a manipulable scene representation: separate visual fragments with positions and dimensions.
+
+## Underlying Software Concept
+
+This is similar to converting a screenshot back into an approximate design document. Once the system has structure rather than undifferentiated pixels, code can control each component predictably.
+
+## Pipeline
+```bash
+one flat bitmap → SVG containing independently positioned image layers
+
+---
+
+raster image → LayerD decomposition → layered SVG → per-layer transforms → Remotion frames → MP4
+```
+
+## Concept
+The animation is a deterministic function:
+
+```
+visual state = f(layer, preset, frame, canvas size)
+```
+There is no continuously mutating animation state. Given the same SVG, preset, and frame number, Remotion produces the same visual result.
+
+## Underlying Software Concept
+
+This is pure, frame-based rendering. A frame can be rendered independently without replaying all previous frames. That makes previewing, seeking, retrying, and server rendering predictable.
