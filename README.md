@@ -62,6 +62,10 @@ one flat bitmap → SVG containing independently positioned image layers
 raster image → LayerD decomposition → layered SVG → per-layer transforms → Remotion frames → MP4
 ```
 
+## Video dimensions
+
+H.264 requires even width and height because its common YUV 4:2:0 color format groups pixels into 2×2 blocks. Browser export rounds odd dimensions down to the previous even number and crops at most one edge pixel.
+
 ## Concept
 The animation is a deterministic function:
 
@@ -72,4 +76,24 @@ There is no continuously mutating animation state. Given the same SVG, preset, a
 
 ## Underlying Software Concept
 
-This is pure, frame-based rendering. A frame can be rendered independently without replaying all previous frames. That makes previewing, seeking, retrying, and server rendering predictable.
+This is pure, frame-based rendering. A frame can be rendered independently without replaying all previous frames. That makes previewing, seeking, retrying, and browser rendering predictable.
+
+## Underlying Software Concept
+
+This is the tradeoff between an open action space and a bounded action space:
+Arbitrary generated code offers greater creative variety.
+Validated presets offer reproducibility, safety, simpler testing, and guaranteed convergence.
+A hybrid system can let an LLM make semantic decisions while keeping execution constrained.
+
+```
+user intent → LLM planner → validated motion specification → deterministic renderer
+```
+
+## Underlying Software Concept
+
+This is the distinction between:
+Request execution: start with no durable memory, handle one request, disappear.
+Persistent model worker: keep weights and runtime resources warm across jobs.
+The LayerD backend benefits from persistence because it can keep the model weights loaded across requests.
+
+Video rendering runs entirely in the browser with WebCodecs. The completed MP4 remains a temporary Blob URL for preview and download, so the app does not upload or persist rendered videos.

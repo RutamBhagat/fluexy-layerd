@@ -101,6 +101,7 @@ export function LayeredVideo({ svg, preset, width, height }: LayeredVideoProps) 
     <AbsoluteFill style={{ backgroundColor: "white" }}>
       <svg
         viewBox={`0 0 ${width} ${height}`}
+        preserveAspectRatio="xMidYMid slice"
         width="100%"
         height="100%"
         xmlns="http://www.w3.org/2000/svg"

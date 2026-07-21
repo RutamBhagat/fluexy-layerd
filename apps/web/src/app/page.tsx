@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Player } from "@remotion/player";
+import { canRenderMediaOnWeb, renderMediaOnWeb } from "@remotion/web-renderer";
 import {
   ArrowDown,
   ArrowLeft,
@@ -65,6 +66,13 @@ function getSvgSize(svg: string) {
   return { width, height };
 }
 
+function getH264Size({ width, height }: { width: number; height: number }) {
+  return {
+    width: Math.floor(width / 2) * 2,
+    height: Math.floor(height / 2) * 2,
+  };
+}
+
 export default function Home() {
   const [file, setFile] = useState<File | null>(null);
   const [sourceUrl, setSourceUrl] = useState("");
@@ -74,7 +82,13 @@ export default function Home() {
   const [error, setError] = useState("");
   const [isConverting, setIsConverting] = useState(false);
   const [isRendering, setIsRendering] = useState(false);
+  const [renderProgress, setRenderProgress] = useState(0);
+  const renderController = useRef<AbortController | null>(null);
   const size = useMemo(() => getSvgSize(svg), [svg]);
+  const renderSize = useMemo(
+    () => getH264Size(size),
+    [size.height, size.width],
+  );
   const inputProps = useMemo(
     () => ({ svg, preset, width: size.width, height: size.height }),
     [preset, size.height, size.width, svg],
@@ -85,6 +99,14 @@ export default function Home() {
       if (sourceUrl) URL.revokeObjectURL(sourceUrl);
     };
   }, [sourceUrl]);
+
+  useEffect(() => {
+    return () => {
+      if (videoUrl) URL.revokeObjectURL(videoUrl);
+    };
+  }, [videoUrl]);
+
+  useEffect(() => () => renderController.current?.abort(), []);
 
   function selectImage(event: React.ChangeEvent<HTMLInputElement>) {
     const selectedFile = event.target.files?.[0] ?? null;
@@ -131,24 +153,50 @@ export default function Home() {
   }
 
   async function renderVideo() {
+    const controller = new AbortController();
+    renderController.current = controller;
     setIsRendering(true);
+    setRenderProgress(0);
     setError("");
 
     try {
-      const response = await fetch("/api/render", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(inputProps),
+      const compatibility = await canRenderMediaOnWeb({
+        container: "mp4",
+        videoCodec: "h264",
+        width: renderSize.width,
+        height: renderSize.height,
+        muted: true,
       });
 
-      if (!response.ok) throw new Error("The MP4 could not be rendered.");
-      const result = (await response.json()) as { videoUrl: string };
-      setVideoUrl(result.videoUrl);
+      if (!compatibility.canRender) {
+        throw new Error(compatibility.issues.map((issue) => issue.message).join(" "));
+      }
+
+      const result = await renderMediaOnWeb({
+        composition: {
+          id: "LayeredVideo",
+          component: LayeredVideo,
+          durationInFrames: videoDurationInFrames,
+          fps: videoFps,
+          width: renderSize.width,
+          height: renderSize.height,
+          defaultProps: inputProps,
+        },
+        inputProps,
+        container: "mp4",
+        videoCodec: "h264",
+        muted: true,
+        signal: controller.signal,
+        onProgress: ({ progress }) => setRenderProgress(progress),
+      });
+      const blob = await result.getBlob();
+      setVideoUrl(URL.createObjectURL(blob));
     } catch (renderError) {
       setError(
         renderError instanceof Error ? renderError.message : "The MP4 could not be rendered.",
       );
     } finally {
+      renderController.current = null;
       setIsRendering(false);
     }
   }
@@ -214,7 +262,11 @@ export default function Home() {
                 ) : (
                   <Play data-icon="inline-start" />
                 )}
-                {isRendering ? "Rendering MP4" : videoUrl ? "Render again" : "Render MP4"}
+                {isRendering
+                  ? `Rendering ${Math.round(renderProgress * 100)}%`
+                  : videoUrl
+                    ? "Render again"
+                    : "Render MP4"}
               </Button>
             )}
           </div>
@@ -232,6 +284,7 @@ export default function Home() {
               id="image"
               type="file"
               accept="image/png,image/jpeg,image/webp"
+              disabled={isConverting || isRendering}
               onChange={selectImage}
             />
             <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden border bg-muted/30">
