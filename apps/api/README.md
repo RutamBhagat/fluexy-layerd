@@ -1,6 +1,6 @@
 # LayerD API
 
-Local FastAPI backend that returns a self-contained LayerD SVG with AI-generated semantic layer groups embedded in its metadata.
+Local FastAPI backend that runs LayerD and returns the ungrouped SVG, canvas metadata, and transparent layer images. The Next.js server performs AI grouping and embeds the result in the SVG.
 
 ## Run on Apple silicon
 
@@ -23,18 +23,19 @@ Open [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs), or convert from t
 curl -X POST http://127.0.0.1:8000/convert \
   -H 'X-API-Key: local-layerd-key' \
   -F image=@apps/web/public/image.png \
-  --output design.svg
+  --output layers.json
 ```
 
 The API uses `local-layerd-key` for local development. Override it with the `LAYERD_API_KEY` environment variable.
 
-Create `.env` in this directory for the vision grouping model:
+Create `.env` in this directory only when overriding the local API settings:
 
 ```dotenv
-OPENAI_API_KEY=...
-OPENAI_BASE_URL=https://codex-vercel-port.vercel.app/v1
-OPENAI_MODEL=gpt-5.6-sol-medium
+LAYERD_API_KEY=local-layerd-key
+LAYERD_DEVICE=mps
 ```
+
+The vision model settings belong in `apps/web/.env` because grouping runs in Next.js.
 
 ## Test
 

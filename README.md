@@ -1,6 +1,6 @@
 # Fluexy LayerD
 
-Turn a flat raster design into a layered motion video. A local Python API uses [LayerD](https://github.com/CyberAgentAILab/LayerD) to reconstruct the image as a self-contained SVG, a vision model groups related layers, and a Next.js studio animates those groups with deterministic [Remotion](https://www.remotion.dev/) presets.
+Turn a flat raster design into a layered motion video. A local Python API uses [LayerD](https://github.com/CyberAgentAILab/LayerD) to reconstruct the image, a Next.js vision step built with the Vercel AI SDK groups related layers into a self-contained SVG, and the studio animates those groups with deterministic [Remotion](https://www.remotion.dev/) presets.
 
 ```text
 PNG, JPEG, or WebP → LayerD → AI grouping → layered SVG → Remotion → MP4
@@ -34,18 +34,13 @@ npm install
 uv sync --project apps/api
 ```
 
-Create `apps/web/.env` with your [Clerk](https://clerk.com/) credentials:
+Create `apps/web/.env` with your [Clerk](https://clerk.com/) credentials and vision endpoint:
 
 ```dotenv
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=...
 CLERK_SECRET_KEY=...
 DATABASE_URL=...
-```
-
-Create `apps/api/.env` with an OpenAI-compatible vision endpoint:
-
-```dotenv
-OPENAI_API_KEY=...
+OPENAI_API_KEY=sk-local-proxy-key
 OPENAI_BASE_URL=https://codex-vercel-port.vercel.app/v1
 OPENAI_MODEL=gpt-5.6-sol-medium
 ```
@@ -94,10 +89,10 @@ Send an image as the `image` multipart field:
 curl -X POST http://127.0.0.1:8000/convert \
   -H 'X-API-Key: local-layerd-key' \
   -F image=@apps/web/public/image.png \
-  --output design.svg
+  --output layers.json
 ```
 
-The endpoint returns a self-contained SVG. Its metadata includes the AI-generated semantic groups used by Remotion.
+The FastAPI endpoint returns JSON containing the ungrouped SVG, canvas size, and transparent layer images. The authenticated Next.js `/api/convert` route sends those layers to the vision agent and returns the final SVG with semantic grouping metadata for Remotion.
 
 ## Project structure
 

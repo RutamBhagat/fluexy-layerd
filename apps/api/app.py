@@ -1,3 +1,5 @@
+import base64
+import io
 import os
 import secrets
 from contextlib import asynccontextmanager
@@ -7,12 +9,9 @@ from typing import Annotated
 import torch
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, File, Header, HTTPException, UploadFile
-from fastapi.responses import Response
+from fastapi.responses import JSONResponse
 from layerd import LayerDPipeline
-from openai import OpenAIError
 from PIL import Image, UnidentifiedImageError
-
-from .grouping import GroupingInput, group_svg
 
 
 load_dotenv(Path(__file__).with_name(".env"))
@@ -45,10 +44,17 @@ async def lifespan(_: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 
+def image_data_url(image: Image.Image) -> str:
+    buffer = io.BytesIO()
+    image.convert("RGBA").save(buffer, format="PNG", optimize=True)
+    encoded = base64.b64encode(buffer.getvalue()).decode("ascii")
+    return f"data:image/png;base64,{encoded}"
+
+
 @app.post("/convert", dependencies=[Depends(require_api_key)])
 def convert_image(
     image: Annotated[UploadFile, File()],
-) -> Response:
+) -> JSONResponse:
     if pipeline is None:
         raise HTTPException(503, "LayerD is loading")
 
@@ -58,17 +64,20 @@ def convert_image(
         raise HTTPException(400, "Upload a valid image") from error
 
     result = pipeline(source, max_iterations=3)
+    elements = [
+        {
+            "id": element["id"],
+            "type": element["type"],
+            "box": element["box"],
+            "image": image_data_url(element["image"]),
+        }
+        for element in result.elements
+    ]
 
-    try:
-        svg = group_svg(
-            GroupingInput(
-                source=source,
-                elements=result.elements,
-                canvas_size=result.canvas_size,
-                svg=result.to_svg(),
-            )
-        )
-    except (OpenAIError, RuntimeError) as error:
-        raise HTTPException(502, "The AI grouping step failed") from error
-
-    return Response(svg, media_type="image/svg+xml")
+    return JSONResponse(
+        {
+            "svg": result.to_svg(),
+            "canvas_size": result.canvas_size,
+            "elements": elements,
+        }
+    )
