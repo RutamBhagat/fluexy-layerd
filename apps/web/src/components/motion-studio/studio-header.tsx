@@ -1,3 +1,4 @@
+import { UserButton } from "@clerk/nextjs";
 import { CardHeader } from "@fluexy-layerd/ui/components/card";
 
 import { PresetSelect } from "@/components/motion-studio/preset-select";
@@ -22,6 +23,7 @@ export function StudioHeader(props: StudioHeaderProps) {
   return (
     <CardHeader className="flex shrink-0 flex-row items-center justify-between gap-3 border-b">
       <div className="flex items-center gap-2">
+        <UserButton />
         <PresetSelect
           disabled={!props.hasFile || props.isRendering}
           onChange={props.onPresetChange}
