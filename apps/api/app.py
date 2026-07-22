@@ -9,7 +9,6 @@ from typing import Annotated
 import torch
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, File, Header, HTTPException, UploadFile
-from fastapi.responses import JSONResponse
 from layerd import LayerDPipeline
 from PIL import Image, UnidentifiedImageError
 
@@ -54,7 +53,7 @@ def image_data_url(image: Image.Image) -> str:
 @app.post("/convert", dependencies=[Depends(require_api_key)])
 def convert_image(
     image: Annotated[UploadFile, File()],
-) -> JSONResponse:
+) -> dict[str, object]:
     if pipeline is None:
         raise HTTPException(503, "LayerD is loading")
 
@@ -74,10 +73,8 @@ def convert_image(
         for element in result.elements
     ]
 
-    return JSONResponse(
-        {
-            "svg": result.to_svg(),
-            "canvas_size": result.canvas_size,
-            "elements": elements,
-        }
-    )
+    return {
+        "svg": result.to_svg(),
+        "canvas_size": result.canvas_size,
+        "elements": elements,
+    }

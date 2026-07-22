@@ -1,12 +1,6 @@
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { env } from "@fluexy-layerd/env/server";
-import {
-	DOMImplementation,
-	DOMParser,
-	XMLSerializer,
-	type Document,
-	type Element,
-} from "@xmldom/xmldom";
+import { DOMParser, XMLSerializer } from "@xmldom/xmldom";
 import { generateText, Output } from "ai";
 import sharp from "sharp";
 import { z } from "zod";
@@ -52,7 +46,7 @@ const groupingInputSchema = z.object({
 				id: z.number().int(),
 				type: z.string(),
 				box: boxSchema,
-				image: z.string().startsWith("data:image/png;base64,"),
+				image: z.string().regex(/^data:image\/png;base64,[A-Za-z0-9+/]+={0,2}$/),
 			}),
 		)
 		.min(1),
@@ -83,89 +77,22 @@ async function imageDataUrl(image: Buffer): Promise<string> {
 	return `data:image/jpeg;base64,${prepared.toString("base64")}`;
 }
 
-function appendSvgElement(options: {
-	document: Document;
-	parent: Element;
-	name: string;
-	attributes: Record<string, string>;
-	text?: string;
-}): Element {
-	const element = options.document.createElementNS(svgNamespace, options.name);
-	for (const [name, value] of Object.entries(options.attributes))
-		element.setAttribute(name, value);
-	if (options.text !== undefined)
-		element.appendChild(options.document.createTextNode(options.text));
-	options.parent.appendChild(element);
-	return element;
-}
-
 async function makeContactSheet(elements: GroupingInput["elements"]): Promise<string> {
 	const columns = Math.max(1, Math.ceil(Math.sqrt(elements.length)));
 	const rows = Math.ceil(elements.length / columns);
 	const cellWidth = 220;
 	const cellHeight = 180;
-	const document = new DOMImplementation().createDocument(svgNamespace, "svg", null);
-	const root = document.documentElement;
-	if (!root) throw new Error("Could not create the contact sheet SVG");
-	root.setAttribute("width", String(columns * cellWidth));
-	root.setAttribute("height", String(rows * cellHeight));
-
-	elements.forEach((element, index) => {
+	const cells = elements.map((element, index) => {
 		const x = (index % columns) * cellWidth;
 		const y = Math.floor(index / columns) * cellHeight;
-		appendSvgElement({
-			document,
-			parent: root,
-			name: "rect",
-			attributes: {
-				x: String(x),
-				y: String(y),
-				width: String(cellWidth - 1),
-				height: String(cellHeight - 1),
-				fill: "white",
-				stroke: "#cbd5e1",
-			},
-		});
-		appendSvgElement({
-			document,
-			parent: root,
-			name: "rect",
-			attributes: {
-				x: String(x),
-				y: String(y),
-				width: String(cellWidth - 1),
-				height: "25",
-				fill: "#0f172a",
-			},
-		});
-		appendSvgElement({
-			document,
-			parent: root,
-			name: "text",
-			attributes: {
-				x: String(x + 8),
-				y: String(y + 17),
-				fill: "white",
-				"font-family": "sans-serif",
-				"font-size": "12",
-			},
-			text: `Layer ${element.id}`,
-		});
-		appendSvgElement({
-			document,
-			parent: root,
-			name: "image",
-			attributes: {
-				href: element.image,
-				x: String(x + 12),
-				y: String(y + 31),
-				width: "196",
-				height: "138",
-				preserveAspectRatio: "xMidYMid meet",
-			},
-		});
+		return `<g transform="translate(${x} ${y})">
+			<rect width="219" height="179" fill="white" stroke="#cbd5e1"/>
+			<rect width="219" height="25" fill="#0f172a"/>
+			<text x="8" y="17" fill="white" font-family="sans-serif" font-size="12">Layer ${element.id}</text>
+			<image href="${element.image}" x="12" y="31" width="196" height="138" preserveAspectRatio="xMidYMid meet"/>
+		</g>`;
 	});
-	const sheet = new XMLSerializer().serializeToString(document);
+	const sheet = `<svg xmlns="${svgNamespace}" width="${columns * cellWidth}" height="${rows * cellHeight}">${cells.join("")}</svg>`;
 	const jpeg = await sharp(Buffer.from(sheet)).jpeg({ quality: 82 }).toBuffer();
 
 	return `data:image/jpeg;base64,${jpeg.toString("base64")}`;
@@ -207,24 +134,21 @@ function validatePlan(options: {
 	);
 	const assignedIds = plan.groups.flatMap((group) => group.layer_ids);
 
-	if (assignedIds.length !== new Set(assignedIds).size)
-		return "A layer ID was assigned to more than one group.";
 	if (
 		assignedIds.length !== expectedIds.size ||
+		new Set(assignedIds).size !== expectedIds.size ||
 		assignedIds.some((id) => !expectedIds.has(id))
 	)
 		return "Every layer ID must appear exactly once.";
 
 	for (const group of plan.groups) {
-		const backgroundMembers = group.layer_ids.filter((id) => backgroundIds.has(id));
-		const foregroundMembers = group.layer_ids.filter((id) => !backgroundIds.has(id));
+		const hasBackground = group.layer_ids.some((id) => backgroundIds.has(id));
+		const hasForeground = group.layer_ids.some((id) => !backgroundIds.has(id));
 
-		if (backgroundMembers.length && foregroundMembers.length)
+		if (hasBackground && hasForeground)
 			return "Background layers must not be grouped with foreground layers.";
-		if (backgroundMembers.length && group.role !== "background")
-			return "Full-canvas background layers must use the background role.";
-		if (backgroundIds.size && group.role === "background" && foregroundMembers.length)
-			return "Foreground layers must not use the background role.";
+		if (backgroundIds.size && hasBackground !== (group.role === "background"))
+			return "Only full-canvas layers may use the background role.";
 	}
 
 	return null;
@@ -238,12 +162,11 @@ async function requestGroupPlan(options: {
 	const sourceUrl = await imageDataUrl(source);
 	const contactSheetUrl = await makeContactSheet(input.elements);
 	const metadata = layerMetadata(input);
-	const schema = JSON.stringify(z.toJSONSchema(groupPlanSchema));
 	const { output } = await generateText({
 		model: groupingModel,
 		system:
 			"You group decomposed graphic-design layers into semantic animation units. Use the complete design for context and the numbered contact sheet to map visual meaning to layer IDs.",
-		output: Output.json(),
+		output: Output.object({ schema: groupPlanSchema }),
 		messages: [
 			{
 				role: "user",
@@ -252,7 +175,7 @@ async function requestGroupPlan(options: {
 						type: "text",
 						text:
 							"Group the layers into at most 8 semantic units. Every layer ID must appear exactly once. Keep the full-canvas background separate. Group words from one heading, pieces of one illustration, and CTA shapes, text, or icons when they form one visual unit. Do not group items only because they are nearby.\n\n" +
-							`Layer metadata: ${metadata}\n\nResponse schema: ${schema}`,
+							`Layer metadata: ${metadata}`,
 					},
 					{ type: "file", data: sourceUrl, mediaType: "image/jpeg" },
 					{ type: "file", data: contactSheetUrl, mediaType: "image/jpeg" },
@@ -261,10 +184,9 @@ async function requestGroupPlan(options: {
 		],
 		maxRetries: 1,
 	});
-	const plan = groupPlanSchema.parse(output);
-	const error = validatePlan({ plan, input });
+	const error = validatePlan({ plan: output, input });
 	if (error) throw new Error(error);
-	return plan;
+	return output;
 }
 
 function embedGroupPlan(options: { svg: string; plan: GroupPlan }): string {

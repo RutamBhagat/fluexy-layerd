@@ -74,27 +74,18 @@ function parseComposition(svg: string) {
     if (!metadata) throw new Error("No grouping metadata");
 
     const plan = JSON.parse(metadata) as GroupPlan;
-    const groups = plan.groups
-      .map((group, index) => {
-        const layerIds = new Set(group.layer_ids.map(String));
-        const groupLayers = layers.filter((layer) => layerIds.has(layer.id));
-        return groupLayers.length
-          ? getGroupBounds({
-              id: `group-${index + 1}`,
-              role: group.role,
-              layers: groupLayers,
-            })
-          : null;
-      })
-      .filter((group): group is LayerGroup => group !== null);
-    const groupedLayerIds = new Set(groups.flatMap((group) => group.layerIds));
-    const missingGroups = layers
-      .filter((layer) => !groupedLayerIds.has(layer.id))
-      .map((layer) =>
-        getGroupBounds({ id: `layer-${layer.id}`, role: layer.type, layers: [layer] }),
-      );
+    const groups = plan.groups.map((group, index) => {
+      const layerIds = new Set(group.layer_ids.map(String));
+      const groupLayers = layers.filter((layer) => layerIds.has(layer.id));
+      if (!groupLayers.length) throw new Error("Group has no matching layers");
+      return getGroupBounds({
+        id: `group-${index + 1}`,
+        role: group.role,
+        layers: groupLayers,
+      });
+    });
 
-    return { layers, groups: [...groups, ...missingGroups] };
+    return { layers, groups };
   } catch {
     return {
       layers,
