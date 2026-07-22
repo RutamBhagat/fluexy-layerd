@@ -89,14 +89,37 @@ def layer_metadata(options: GroupingInput) -> str:
     return json.dumps({"canvas": [width, height], "layers": layers})
 
 
-def validate_plan(options: tuple[GroupPlan, set[int]]) -> str | None:
-    plan, expected_ids = options
+def validate_plan(options: tuple[GroupPlan, GroupingInput]) -> str | None:
+    plan, grouping_input = options
+    width, height = grouping_input.canvas_size
+    expected_ids = {element["id"] for element in grouping_input.elements}
+    background_ids = {
+        element["id"]
+        for element in grouping_input.elements
+        if element["box"]["x_min"] <= 1
+        and element["box"]["y_min"] <= 1
+        and element["box"]["x_max"] - element["box"]["x_min"] >= width * 0.98
+        and element["box"]["y_max"] - element["box"]["y_min"] >= height * 0.98
+    }
     assigned_ids = [layer_id for group in plan.groups for layer_id in group.layer_ids]
 
     if len(assigned_ids) != len(set(assigned_ids)):
         return "A layer ID was assigned to more than one group."
     if set(assigned_ids) != expected_ids:
         return f"Expected layer IDs {sorted(expected_ids)}, received {sorted(assigned_ids)}."
+
+    for group in plan.groups:
+        group_ids = set(group.layer_ids)
+        background_members = group_ids & background_ids
+        foreground_members = group_ids - background_ids
+
+        if background_members and foreground_members:
+            return "Background layers must not be grouped with foreground layers."
+        if background_members and group.role != "background":
+            return "Full-canvas background layers must use the background role."
+        if background_ids and group.role == "background" and foreground_members:
+            return "Foreground layers must not use the background role."
+
     return None
 
 
@@ -148,9 +171,14 @@ def request_group_plan(options: GroupingInput) -> GroupPlan:
                 },
             ],
         )
+        if not completion.choices:
+            correction = "\n\nYour previous response contained no choices. Return a complete plan."
+            continue
+
         content = completion.choices[0].message.content
         if content is None:
-            raise RuntimeError("The grouping model did not return a plan")
+            correction = "\n\nYour previous response contained no plan. Return a complete plan."
+            continue
 
         try:
             plan = GroupPlan.model_validate_json(content)
@@ -158,7 +186,7 @@ def request_group_plan(options: GroupingInput) -> GroupPlan:
             correction = f"\n\nYour previous response was invalid: {error}. Return corrected JSON."
             continue
 
-        error = validate_plan((plan, {element["id"] for element in options.elements}))
+        error = validate_plan((plan, options))
         if error is None:
             return plan
         correction = f"\n\nYour previous plan was invalid: {error} Return a corrected complete plan."

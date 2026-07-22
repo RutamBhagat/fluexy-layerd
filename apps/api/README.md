@@ -4,17 +4,17 @@ Local FastAPI backend that returns a self-contained LayerD SVG with AI-generated
 
 ## Run on Apple silicon
 
-From this directory:
+From the repository root:
 
 ```bash
-uv sync
-uv run fastapi run app.py --host 127.0.0.1 --port 8000
+uv sync --project apps/api
+uv run --project apps/api uvicorn apps.api.app:app --host 127.0.0.1 --port 8000
 ```
 
 The API uses Apple's MPS device automatically when available. The first startup downloads the LayerD BiRefNet and LaMa model weights and can take several minutes. If an MPS operation is unsupported, run on CPU instead:
 
 ```bash
-LAYERD_DEVICE=cpu uv run fastapi run app.py --host 127.0.0.1 --port 8000
+LAYERD_DEVICE=cpu uv run --project apps/api uvicorn apps.api.app:app --host 127.0.0.1 --port 8000
 ```
 
 Open [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs), or convert from the command line:
@@ -22,7 +22,7 @@ Open [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs), or convert from t
 ```bash
 curl -X POST http://127.0.0.1:8000/convert \
   -H 'X-API-Key: local-layerd-key' \
-  -F image=@../web/public/image.png \
+  -F image=@apps/web/public/image.png \
   --output design.svg
 ```
 
@@ -39,5 +39,5 @@ OPENAI_MODEL=gpt-5.6-sol-medium
 ## Test
 
 ```bash
-uv run pytest
+uv run --project apps/api pytest apps/api
 ```

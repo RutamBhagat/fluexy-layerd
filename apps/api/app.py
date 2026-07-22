@@ -12,7 +12,7 @@ from layerd import LayerDPipeline
 from openai import OpenAIError
 from PIL import Image, UnidentifiedImageError
 
-from grouping import GroupingInput, group_svg
+from .grouping import GroupingInput, group_svg
 
 
 load_dotenv(Path(__file__).with_name(".env"))
