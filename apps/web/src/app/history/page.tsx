@@ -2,7 +2,7 @@ import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
 import { db, projects } from "@fluexy-layerd/db";
 import { Button } from "@fluexy-layerd/ui/components/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@fluexy-layerd/ui/components/card";
+import { Card, CardContent, CardTitle } from "@fluexy-layerd/ui/components/card";
 import { desc, eq } from "drizzle-orm";
 
 export default async function HistoryPage() {
@@ -13,6 +13,7 @@ export default async function HistoryPage() {
     .select({
       id: projects.id,
       filename: projects.filename,
+      svg: projects.svg,
       createdAt: projects.createdAt,
     })
     .from(projects)
@@ -32,16 +33,26 @@ export default async function HistoryPage() {
       </div>
 
       {savedProjects.length ? (
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-6 sm:grid-cols-2">
           {savedProjects.map((project) => (
-            <Card key={project.id}>
-              <CardHeader>
-                <CardTitle className="truncate text-base">{project.filename}</CardTitle>
-              </CardHeader>
-              <CardContent className="flex items-center justify-between gap-4">
-                <p className="text-xs text-muted-foreground">
-                  {project.createdAt.toLocaleString()}
-                </p>
+            <Card key={project.id} className="gap-0 py-0">
+              <Link
+                href={`/?project=${project.id}`}
+                className="group flex h-72 items-center justify-center overflow-hidden border-b bg-muted/30 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <img
+                  src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(project.svg)}`}
+                  alt={`${project.filename} preview`}
+                  className="h-full w-full object-contain transition-transform duration-200 group-hover:scale-[1.02] motion-reduce:transition-none"
+                />
+              </Link>
+              <CardContent className="flex items-center gap-4 py-3">
+                <div className="min-w-0 flex-1">
+                  <CardTitle className="truncate text-base">{project.filename}</CardTitle>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {project.createdAt.toLocaleString()}
+                  </p>
+                </div>
                 <Button render={<Link href={`/?project=${project.id}`} />}>
                   Open
                 </Button>
