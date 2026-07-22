@@ -11,7 +11,7 @@ export default function Home() {
   const studio = useMotionStudio();
 
   return (
-    <main className="mx-auto flex h-svh min-h-0 w-full max-w-7xl overflow-hidden p-4 sm:p-6">
+    <main className="mx-auto flex h-svh min-h-0 w-full max-w-7xl overflow-hidden">
       <Card className="min-h-0 flex-1">
         <StudioHeader
           error={studio.error}
