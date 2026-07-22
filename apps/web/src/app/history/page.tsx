@@ -27,7 +27,7 @@ export default async function HistoryPage() {
           <h1 className="text-2xl font-semibold">History</h1>
           <p className="text-sm text-muted-foreground">Reopen extracted layers without running LayerD again.</p>
         </div>
-        <Button variant="outline" render={<Link href="/" />}>
+        <Button nativeButton={false} variant="outline" render={<Link href="/" />}>
           Back to studio
         </Button>
       </div>
@@ -53,7 +53,7 @@ export default async function HistoryPage() {
                     {project.createdAt.toLocaleString()}
                   </p>
                 </div>
-                <Button render={<Link href={`/?project=${project.id}`} />}>
+                <Button nativeButton={false} render={<Link href={`/?project=${project.id}`} />}>
                   Open
                 </Button>
               </CardContent>
