@@ -21,26 +21,17 @@ type Layer = MotionLayer & {
 };
 
 function parseLayers(svg: string): Layer[] {
-  return [...svg.matchAll(/<image\s+([^>]+?)\s*\/?>(?:<\/image>)?/g)].map(
-    (match, index) => {
-      const attributes = Object.fromEntries(
-        [...match[1].matchAll(/([\w:-]+)="([^"]*)"/g)].map((attribute) => [
-          attribute[1],
-          attribute[2],
-        ]),
-      );
+  const document = new DOMParser().parseFromString(svg, "image/svg+xml");
 
-      return {
-        id: attributes["data-id"] ?? String(index),
-        type: attributes["data-type"] ?? "image",
-        href: attributes.href ?? attributes["xlink:href"] ?? "",
-        x: Number(attributes.x ?? 0),
-        y: Number(attributes.y ?? 0),
-        width: Number(attributes.width ?? 0),
-        height: Number(attributes.height ?? 0),
-      };
-    },
-  );
+  return [...document.querySelectorAll("image")].map((image, index) => ({
+    id: image.dataset.id ?? String(index),
+    type: image.dataset.type ?? "image",
+    href: image.getAttribute("href") ?? image.getAttribute("xlink:href") ?? "",
+    x: Number(image.getAttribute("x") ?? 0),
+    y: Number(image.getAttribute("y") ?? 0),
+    width: Number(image.getAttribute("width") ?? 0),
+    height: Number(image.getAttribute("height") ?? 0),
+  }));
 }
 
 function sortLayers({ layers, preset }: { layers: Layer[]; preset: MotionPreset }) {

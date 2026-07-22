@@ -13,11 +13,13 @@ import {
   videoFps,
 } from "@/remotion/types";
 
-const apiUrl = env.NEXT_PUBLIC_LAYERD_API_URL;
-
 function getSvgSize(svg: string) {
-  const width = Number(svg.match(/<svg[^>]*\swidth="(\d+(?:\.\d+)?)"/)?.[1] ?? 1080);
-  const height = Number(svg.match(/<svg[^>]*\sheight="(\d+(?:\.\d+)?)"/)?.[1] ?? 1080);
+  const width = Number(
+    svg.match(/<svg[^>]*\swidth="(\d+(?:\.\d+)?)"/)?.[1] ?? 1080,
+  );
+  const height = Number(
+    svg.match(/<svg[^>]*\sheight="(\d+(?:\.\d+)?)"/)?.[1] ?? 1080,
+  );
 
   return { width, height };
 }
@@ -58,6 +60,7 @@ export function useMotionStudio() {
       if (videoUrl) URL.revokeObjectURL(videoUrl);
     };
   }, [videoUrl]);
+
   useEffect(() => () => renderController.current?.abort(), []);
 
   function selectImage(event: ChangeEvent<HTMLInputElement>) {
@@ -86,12 +89,16 @@ export function useMotionStudio() {
     formData.append("image", file);
 
     try {
-      const response = await fetch(`${apiUrl}/convert`, {
-        method: "POST",
-        body: formData,
-      });
+      const response = await fetch(
+        `${env.NEXT_PUBLIC_LAYERD_API_URL}/convert`,
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
 
-      if (!response.ok) throw new Error("The image could not be separated into layers.");
+      if (!response.ok)
+        throw new Error("The image could not be separated into layers.");
       setSvg(await response.text());
     } catch (conversionError) {
       setError(
@@ -121,7 +128,9 @@ export function useMotionStudio() {
       });
 
       if (!compatibility.canRender) {
-        throw new Error(compatibility.issues.map((issue) => issue.message).join(" "));
+        throw new Error(
+          compatibility.issues.map((issue) => issue.message).join(" "),
+        );
       }
 
       const result = await renderMediaOnWeb({
@@ -145,7 +154,9 @@ export function useMotionStudio() {
       setVideoUrl(URL.createObjectURL(blob));
     } catch (renderError) {
       setError(
-        renderError instanceof Error ? renderError.message : "The MP4 could not be rendered.",
+        renderError instanceof Error
+          ? renderError.message
+          : "The MP4 could not be rendered.",
       );
     } finally {
       renderController.current = null;
