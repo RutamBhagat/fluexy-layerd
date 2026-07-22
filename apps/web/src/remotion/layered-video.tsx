@@ -4,14 +4,14 @@ import { AbsoluteFill, interpolate, useCurrentFrame, useVideoConfig } from "remo
 import {
   getMotionProgress,
   getMotionTransform,
-  isPosterBuildPreset,
+  sortLayers,
   type MotionLayer,
 } from "./motion";
+import { motionPresets } from "./presets";
 import {
   entranceDurationInFrames,
   reconstructedHoldInFrames,
   type LayeredVideoProps,
-  type MotionPreset,
   videoDurationInFrames,
 } from "./types";
 
@@ -32,23 +32,6 @@ function parseLayers(svg: string): Layer[] {
     width: Number(image.getAttribute("width") ?? 0),
     height: Number(image.getAttribute("height") ?? 0),
   }));
-}
-
-function sortLayers({ layers, preset }: { layers: Layer[]; preset: MotionPreset }) {
-  if (isPosterBuildPreset(preset)) return [...layers];
-
-  return [...layers].sort((first, second) => {
-    const firstX = first.x + first.width / 2;
-    const secondX = second.x + second.width / 2;
-    const firstY = first.y + first.height / 2;
-    const secondY = second.y + second.height / 2;
-
-    if (preset === "slide-up") return secondY - firstY;
-    if (preset === "slide-down") return firstY - secondY;
-    if (preset === "slide-left") return secondX - firstX;
-    if (preset === "slide-right") return firstX - secondX;
-    return 0;
-  });
 }
 
 function isBackground({
@@ -73,11 +56,13 @@ export function LayeredVideo({ svg, preset, width, height }: LayeredVideoProps) 
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const layers = useMemo(() => parseLayers(svg), [svg]);
-  const buildsPoster = isPosterBuildPreset(preset);
+  const presetConfig = motionPresets[preset];
   const animatedLayers = useMemo(
     () =>
-      buildsPoster ? layers : layers.filter((layer) => !isBackground({ layer, width, height })),
-    [buildsPoster, height, layers, width],
+      presetConfig.animateBackground
+        ? layers
+        : layers.filter((layer) => !isBackground({ layer, width, height })),
+    [height, layers, presetConfig.animateBackground, width],
   );
   const orderedLayers = useMemo(
     () => sortLayers({ layers: animatedLayers, preset }),
@@ -99,7 +84,7 @@ export function LayeredVideo({ svg, preset, width, height }: LayeredVideoProps) 
       >
         {layers.map((layer) => {
           const background = isBackground({ layer, width, height });
-          const staticBackground = background && !buildsPoster;
+          const staticBackground = background && !presetConfig.animateBackground;
           const delay = (order.get(layer.id) ?? 0) * stagger;
           const progress = staticBackground
             ? 1
@@ -122,7 +107,7 @@ export function LayeredVideo({ svg, preset, width, height }: LayeredVideoProps) 
           const centerY = layer.y + layer.height / 2;
           const opacity = staticBackground
             ? 1
-            : interpolate(progress, [0, preset === "fade-in" ? 1 : 0.2], [0, 1], {
+            : interpolate(progress, [0, presetConfig.opacityAt], [0, 1], {
                 extrapolateLeft: "clamp",
                 extrapolateRight: "clamp",
               });

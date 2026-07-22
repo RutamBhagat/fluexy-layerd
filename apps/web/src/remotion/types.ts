@@ -1,21 +1,6 @@
-export const motionPresets = [
-  { value: "slide-up", label: "Slide up", description: "Bottom to top" },
-  { value: "slide-down", label: "Slide down", description: "Top to bottom" },
-  { value: "slide-left", label: "Slide left", description: "Right to left" },
-  { value: "slide-right", label: "Slide right", description: "Left to right" },
-  { value: "fade-in", label: "Fade in", description: "Transparent to visible" },
-  { value: "clean-build", label: "Clean build", description: "Soft staggered rise" },
-  { value: "bounce-in", label: "Bounce in", description: "Playful spring entrance" },
-  { value: "collage-toss", label: "Collage toss", description: "Tossed in from the sides" },
-  { value: "radial-explosion", label: "Radial explosion", description: "Edges to final position" },
-  {
-    value: "chaotic-to-organized",
-    label: "Chaotic to organized",
-    description: "Scattered pieces assemble",
-  },
-] as const;
+import type { MotionPreset } from "./presets";
 
-export type MotionPreset = (typeof motionPresets)[number]["value"];
+export type { MotionPreset } from "./presets";
 
 export type LayeredVideoProps = {
   svg: string;
