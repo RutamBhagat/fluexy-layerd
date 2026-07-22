@@ -1,60 +1,73 @@
 # Fluexy LayerD
 
-Turn a flat raster design into a layered motion video. A local Python API uses [LayerD](https://github.com/CyberAgentAILab/LayerD) to produce a self-contained SVG, then the web app animates its layers with deterministic Remotion presets.
-
-## How it works
+Turn a flat raster design into a layered motion video. A local Python API uses [LayerD](https://github.com/CyberAgentAILab/LayerD) to reconstruct the image as a self-contained SVG, then a Next.js studio animates its layers with deterministic [Remotion](https://www.remotion.dev/) presets and renders an MP4 in the browser.
 
 ```text
-image → LayerD API → layered SVG → Remotion preset → browser-rendered MP4
+PNG, JPEG, or WebP → LayerD API → layered SVG → Remotion preset → MP4
 ```
 
-1. Upload a PNG, JPEG, or WebP image.
-2. LayerD reconstructs it as independently positioned SVG image layers.
-3. Choose a motion preset and preview it with Remotion Player.
-4. Export an MP4 in the browser with WebCodecs.
+## Features
 
-Rendered videos are temporary Blob URLs used for preview and download. They are not uploaded or persisted, and no FFmpeg render server is required.
+- Separates a flat image into independently positioned SVG image layers.
+- Previews motion immediately with Remotion Player.
+- Includes ten deterministic presets: directional slides, fade, clean build, bounce, collage toss, radial explosion, and chaotic assembly.
+- Renders a five-second, 30 fps H.264 MP4 entirely in the browser.
+- Keeps the generated SVG in memory and uses temporary browser URLs for previews and downloads; nothing is persisted.
 
-## Requirements
+## Prerequisites
 
 - Node.js and npm
+- Python 3.11 or 3.12
 - [uv](https://docs.astral.sh/uv/)
 - A browser with WebCodecs and H.264 encoding support
 
-## Setup
+> [!NOTE]
+> The first API startup downloads the LayerD BiRefNet and LaMa model weights and can take several minutes.
+
+## Getting started
+
+Install the JavaScript and Python dependencies from the repository root:
 
 ```bash
 npm install
 uv sync --project apps/api
 ```
 
-Create `apps/web/.env` with your Clerk credentials:
+Create `apps/web/.env` with your [Clerk](https://clerk.com/) credentials:
 
 ```dotenv
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=...
 CLERK_SECRET_KEY=...
 ```
 
-`NEXT_PUBLIC_LAYERD_API_URL` defaults to `http://127.0.0.1:8000`.
+The browser uses `http://127.0.0.1:8000` for LayerD by default. Override it when needed:
 
-## Run
-
-Start both services from the repository root:
-
-```bash
-npm run dev:api  # http://127.0.0.1:8000
-npm run dev:web  # http://localhost:3001
+```dotenv
+NEXT_PUBLIC_LAYERD_API_URL=http://127.0.0.1:8000
 ```
 
-The first API startup downloads the LayerD model weights. API documentation is available at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs).
-
-On Apple silicon, the API selects MPS when available. Use CPU if an operation is unsupported:
+Start the API and web studio in separate terminals:
 
 ```bash
-LAYERD_DEVICE=cpu npm run dev:api
+npm run dev:api
+npm run dev:web
 ```
 
-## API example
+Open [http://localhost:3001](http://localhost:3001). The LayerD API runs at `http://127.0.0.1:8000`, with interactive documentation at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs).
+
+## Usage
+
+1. Choose a PNG, JPEG, or WebP image.
+2. Select a motion preset.
+3. Choose **Create motion** to extract the image layers.
+4. Preview the animation, then choose **Render MP4**.
+5. Download the rendered video.
+
+The output dimensions follow the LayerD SVG. H.264 requires even dimensions, so the renderer crops at most one row or column from an odd-sized source.
+
+## API
+
+Send an image as the `image` multipart field:
 
 ```bash
 curl -X POST http://127.0.0.1:8000/convert \
@@ -62,10 +75,45 @@ curl -X POST http://127.0.0.1:8000/convert \
   --output design.svg
 ```
 
-The response content type is `image/svg+xml`.
+The endpoint returns a self-contained `image/svg+xml` document whose embedded image elements can be animated independently.
 
-## Design notes
+## Project structure
 
-Motion is a deterministic function of the layer, preset, frame, and canvas size. Curated presets keep output reproducible and ensure every animation resolves to the reconstructed design without generated animation code or an LLM evaluator.
+```text
+apps/
+├── api/        FastAPI wrapper around the LayerD pipeline
+└── web/        Next.js motion studio and browser renderer
+packages/
+├── config/     Shared TypeScript configuration
+├── db/         Drizzle and Neon workspace scaffolding
+├── env/        Shared environment validation
+└── ui/         Shared UI components and styles
+```
 
-H.264 requires even dimensions because its common YUV 4:2:0 format groups pixels into 2×2 blocks. The exporter rounds odd dimensions down and crops at most one row or column, avoiding letterboxing.
+## Useful commands
+
+| Command | Description |
+| --- | --- |
+| `npm run dev:api` | Start the LayerD API on port 8000 |
+| `npm run dev:web` | Start the web studio on port 3001 |
+| `npm run dev` | Start every workspace development script |
+| `npm run build` | Build workspaces that provide a build script |
+| `npm run check-types` | Type-check workspaces that provide a type-check script |
+
+## Troubleshooting
+
+### LayerD fails on Apple silicon
+
+The API selects MPS automatically when available. If an operation is unsupported, run the pipeline on CPU:
+
+```bash
+LAYERD_DEVICE=cpu npm run dev:api
+```
+
+### The browser cannot render the MP4
+
+Use a browser that supports WebCodecs with H.264 encoding. Compatibility is checked before rendering, and any browser-reported issue appears in the studio.
+
+### The web app cannot reach the API
+
+Keep the default local ports when developing: the API currently allows browser requests from `http://localhost:3001`. If the API runs elsewhere, set `NEXT_PUBLIC_LAYERD_API_URL` to its URL and update the API CORS origin in `apps/api/app.py`.
