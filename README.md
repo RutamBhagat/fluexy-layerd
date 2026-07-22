@@ -1,14 +1,15 @@
 # Fluexy LayerD
 
-Turn a flat raster design into a layered motion video. A local Python API uses [LayerD](https://github.com/CyberAgentAILab/LayerD) to reconstruct the image as a self-contained SVG, then a Next.js studio animates its layers with deterministic [Remotion](https://www.remotion.dev/) presets and renders an MP4 in the browser.
+Turn a flat raster design into a layered motion video. A local Python API uses [LayerD](https://github.com/CyberAgentAILab/LayerD) to reconstruct the image as a self-contained SVG, a vision model groups related layers, and a Next.js studio animates those groups with deterministic [Remotion](https://www.remotion.dev/) presets.
 
 ```text
-PNG, JPEG, or WebP → LayerD API → layered SVG → Remotion preset → MP4
+PNG, JPEG, or WebP → LayerD → AI grouping → layered SVG → Remotion → MP4
 ```
 
 ## Features
 
 - Separates a flat image into independently positioned SVG image layers.
+- Groups related text, illustrations, decorations, and calls to action with a vision model.
 - Previews motion immediately with Remotion Player.
 - Includes ten deterministic presets: directional slides, fade, clean build, bounce, collage toss, radial explosion, and chaotic assembly.
 - Renders a five-second, 30 fps H.264 MP4 entirely in the browser.
@@ -39,6 +40,14 @@ Create `apps/web/.env` with your [Clerk](https://clerk.com/) credentials:
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=...
 CLERK_SECRET_KEY=...
 DATABASE_URL=...
+```
+
+Create `apps/api/.env` with an OpenAI-compatible vision endpoint:
+
+```dotenv
+OPENAI_API_KEY=...
+OPENAI_BASE_URL=https://codex-vercel-port.vercel.app/v1
+OPENAI_MODEL=gpt-5.6-sol-medium
 ```
 
 Create the project table once:
@@ -88,7 +97,7 @@ curl -X POST http://127.0.0.1:8000/convert \
   --output design.svg
 ```
 
-The endpoint returns a self-contained `image/svg+xml` document whose embedded image elements can be animated independently.
+The endpoint returns a self-contained SVG. Its metadata includes the AI-generated semantic groups used by Remotion.
 
 ## Project structure
 

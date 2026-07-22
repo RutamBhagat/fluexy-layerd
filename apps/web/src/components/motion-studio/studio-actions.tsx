@@ -32,7 +32,7 @@ export function StudioActions({
           ) : (
             <ArrowRight data-icon="inline-start" />
           )}
-          {isConverting ? "Extracting layers" : "Extract layers"}
+          {isConverting ? "Analyzing layers" : "Extract and group"}
         </Button>
       ) : (
         <Button disabled={isRendering} onClick={onRenderVideo}>

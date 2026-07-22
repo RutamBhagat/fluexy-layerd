@@ -20,10 +20,46 @@ type Layer = MotionLayer & {
   href: string;
 };
 
-function parseLayers(svg: string): Layer[] {
-  const document = new DOMParser().parseFromString(svg, "image/svg+xml");
+type LayerGroup = MotionLayer & {
+  layerIds: string[];
+  role: string;
+};
 
-  return [...document.querySelectorAll("image")].map((image, index) => ({
+type GroupPlan = {
+  groups: Array<{
+    role: string;
+    layer_ids: number[];
+  }>;
+};
+
+function getGroupBounds({
+  id,
+  role,
+  layers,
+}: {
+  id: string;
+  role: string;
+  layers: Layer[];
+}): LayerGroup {
+  const x = Math.min(...layers.map((layer) => layer.x));
+  const y = Math.min(...layers.map((layer) => layer.y));
+  const right = Math.max(...layers.map((layer) => layer.x + layer.width));
+  const bottom = Math.max(...layers.map((layer) => layer.y + layer.height));
+
+  return {
+    id,
+    role,
+    layerIds: layers.map((layer) => layer.id),
+    x,
+    y,
+    width: right - x,
+    height: bottom - y,
+  };
+}
+
+function parseComposition(svg: string) {
+  const document = new DOMParser().parseFromString(svg, "image/svg+xml");
+  const layers = [...document.querySelectorAll("image")].map((image, index) => ({
     id: image.dataset.id ?? String(index),
     type: image.dataset.type ?? "image",
     href: image.getAttribute("href") ?? image.getAttribute("xlink:href") ?? "",
@@ -32,6 +68,41 @@ function parseLayers(svg: string): Layer[] {
     width: Number(image.getAttribute("width") ?? 0),
     height: Number(image.getAttribute("height") ?? 0),
   }));
+
+  try {
+    const metadata = document.querySelector("#layer-groups")?.textContent;
+    if (!metadata) throw new Error("No grouping metadata");
+
+    const plan = JSON.parse(metadata) as GroupPlan;
+    const groups = plan.groups
+      .map((group, index) => {
+        const layerIds = new Set(group.layer_ids.map(String));
+        const groupLayers = layers.filter((layer) => layerIds.has(layer.id));
+        return groupLayers.length
+          ? getGroupBounds({
+              id: `group-${index + 1}`,
+              role: group.role,
+              layers: groupLayers,
+            })
+          : null;
+      })
+      .filter((group): group is LayerGroup => group !== null);
+    const groupedLayerIds = new Set(groups.flatMap((group) => group.layerIds));
+    const missingGroups = layers
+      .filter((layer) => !groupedLayerIds.has(layer.id))
+      .map((layer) =>
+        getGroupBounds({ id: `layer-${layer.id}`, role: layer.type, layers: [layer] }),
+      );
+
+    return { layers, groups: [...groups, ...missingGroups] };
+  } catch {
+    return {
+      layers,
+      groups: layers.map((layer) =>
+        getGroupBounds({ id: `layer-${layer.id}`, role: layer.type, layers: [layer] }),
+      ),
+    };
+  }
 }
 
 function isBackground({
@@ -55,23 +126,32 @@ function isBackground({
 export function LayeredVideo({ svg, preset, width, height }: LayeredVideoProps) {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  const layers = useMemo(() => parseLayers(svg), [svg]);
+  const { layers, groups } = useMemo(() => parseComposition(svg), [svg]);
   const presetConfig = motionPresets[preset];
-  const animatedLayers = useMemo(
+  const groupByLayer = useMemo(
+    () =>
+      new Map(
+        groups.flatMap((group) =>
+          group.layerIds.map((id) => [id, group] as const),
+        ),
+      ),
+    [groups],
+  );
+  const animatedGroups = useMemo(
     () =>
       presetConfig.animateBackground
-        ? layers
-        : layers.filter((layer) => !isBackground({ layer, width, height })),
-    [height, layers, presetConfig.animateBackground, width],
+        ? groups
+        : groups.filter((group) => group.role !== "background"),
+    [groups, presetConfig.animateBackground],
   );
-  const orderedLayers = useMemo(
-    () => sortLayers({ layers: animatedLayers, preset }),
-    [animatedLayers, preset],
+  const orderedGroups = useMemo(
+    () => sortLayers({ layers: animatedGroups, preset }),
+    [animatedGroups, preset],
   );
-  const order = new Map(orderedLayers.map((layer, index) => [layer.id, index]));
+  const order = new Map(orderedGroups.map((group, index) => [group.id, index]));
   const lastEntranceStart =
     videoDurationInFrames - reconstructedHoldInFrames - entranceDurationInFrames;
-  const stagger = lastEntranceStart / Math.max(orderedLayers.length - 1, 1);
+  const stagger = lastEntranceStart / Math.max(orderedGroups.length - 1, 1);
 
   return (
     <AbsoluteFill style={{ backgroundColor: "white" }}>
@@ -83,9 +163,11 @@ export function LayeredVideo({ svg, preset, width, height }: LayeredVideoProps) 
         xmlns="http://www.w3.org/2000/svg"
       >
         {layers.map((layer) => {
-          const background = isBackground({ layer, width, height });
+          const group = groupByLayer.get(layer.id)!;
+          const background =
+            group.role === "background" || isBackground({ layer, width, height });
           const staticBackground = background && !presetConfig.animateBackground;
-          const delay = (order.get(layer.id) ?? 0) * stagger;
+          const delay = (order.get(group.id) ?? 0) * stagger;
           const progress = staticBackground
             ? 1
             : getMotionProgress({
@@ -96,15 +178,15 @@ export function LayeredVideo({ svg, preset, width, height }: LayeredVideoProps) 
                 fps,
               });
           const transform = getMotionTransform({
-            layer,
+            layer: group,
             preset,
             progress,
             width,
             height,
             background,
           });
-          const centerX = layer.x + layer.width / 2;
-          const centerY = layer.y + layer.height / 2;
+          const centerX = group.x + group.width / 2;
+          const centerY = group.y + group.height / 2;
           const opacity = staticBackground
             ? 1
             : interpolate(progress, [0, presetConfig.opacityAt], [0, 1], {

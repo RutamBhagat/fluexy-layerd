@@ -5,6 +5,8 @@ import { Button } from "@fluexy-layerd/ui/components/button";
 import { Card, CardContent, CardTitle } from "@fluexy-layerd/ui/components/card";
 import { desc, eq } from "drizzle-orm";
 
+import { DeleteProjectButton } from "@/components/motion-studio/delete-project-button";
+
 export default async function HistoryPage() {
   const { userId } = await auth();
   if (!userId) return null;
@@ -53,9 +55,15 @@ export default async function HistoryPage() {
                     {project.createdAt.toLocaleString()}
                   </p>
                 </div>
-                <Button nativeButton={false} render={<Link href={`/?project=${project.id}`} />}>
-                  Open
-                </Button>
+                <div className="flex items-center gap-2">
+                  <DeleteProjectButton
+                    filename={project.filename}
+                    projectId={project.id}
+                  />
+                  <Button nativeButton={false} render={<Link href={`/?project=${project.id}`} />}>
+                    Open
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ))}

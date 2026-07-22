@@ -1,6 +1,6 @@
 # LayerD API
 
-Local FastAPI backend that returns a self-contained LayerD SVG. Its embedded `<image>` elements can be animated independently.
+Local FastAPI backend that returns a self-contained LayerD SVG with AI-generated semantic layer groups embedded in its metadata.
 
 ## Run on Apple silicon
 
@@ -27,6 +27,14 @@ curl -X POST http://127.0.0.1:8000/convert \
 ```
 
 The API uses `local-layerd-key` for local development. Override it with the `LAYERD_API_KEY` environment variable.
+
+Create `.env` in this directory for the vision grouping model:
+
+```dotenv
+OPENAI_API_KEY=...
+OPENAI_BASE_URL=https://codex-vercel-port.vercel.app/v1
+OPENAI_MODEL=gpt-5.6-sol-medium
+```
 
 ## Test
 

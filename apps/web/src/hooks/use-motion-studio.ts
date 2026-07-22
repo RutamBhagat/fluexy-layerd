@@ -128,7 +128,7 @@ export function useMotionStudio() {
       });
 
       if (!response.ok)
-        throw new Error("The image could not be separated into layers.");
+        throw new Error("The image could not be separated and grouped into layers.");
       const extractedSvg = await response.text();
       setSvg(extractedSvg);
 

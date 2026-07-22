@@ -1,15 +1,21 @@
 import os
 import secrets
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Annotated
 
 import torch
+from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, File, Header, HTTPException, UploadFile
 from fastapi.responses import Response
 from layerd import LayerDPipeline
+from openai import OpenAIError
 from PIL import Image, UnidentifiedImageError
 
+from grouping import GroupingInput, group_svg
 
+
+load_dotenv(Path(__file__).with_name(".env"))
 pipeline: LayerDPipeline | None = None
 layerd_api_key = os.getenv("LAYERD_API_KEY", "local-layerd-key")
 
@@ -53,4 +59,16 @@ def convert_image(
 
     result = pipeline(source, max_iterations=3)
 
-    return Response(result.to_svg(), media_type="image/svg+xml")
+    try:
+        svg = group_svg(
+            GroupingInput(
+                source=source,
+                elements=result.elements,
+                canvas_size=result.canvas_size,
+                svg=result.to_svg(),
+            )
+        )
+    except (OpenAIError, RuntimeError) as error:
+        raise HTTPException(502, "The AI grouping step failed") from error
+
+    return Response(svg, media_type="image/svg+xml")

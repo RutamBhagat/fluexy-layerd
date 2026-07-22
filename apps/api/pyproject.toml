@@ -6,6 +6,8 @@ requires-python = ">=3.11,<3.13"
 dependencies = [
   "fastapi[standard]>=0.116",
   "layerd",
+  "openai>=2.11,<3",
+  "python-dotenv>=1.1",
   "python-multipart>=0.0.20",
   "transformers>=4.37,<5",
 ]
