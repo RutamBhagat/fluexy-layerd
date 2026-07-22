@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "../index.css";
 import { ClerkProvider } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";
 import Providers from "@/components/providers";
 
 const geistSans = Geist({
@@ -19,11 +20,13 @@ export const metadata: Metadata = {
   description: "Turn layered images into motion with Remotion.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  await auth.protect();
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body
