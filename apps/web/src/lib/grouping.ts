@@ -239,43 +239,32 @@ async function requestGroupPlan(options: {
 	const contactSheetUrl = await makeContactSheet(input.elements);
 	const metadata = layerMetadata(input);
 	const schema = JSON.stringify(z.toJSONSchema(groupPlanSchema));
-	let correction = "";
-
-	for (let attempt = 0; attempt < 2; attempt += 1) {
-		try {
-			const { output } = await generateText({
-				model: groupingModel,
-				system:
-					"You group decomposed graphic-design layers into semantic animation units. Use the complete design for context and the numbered contact sheet to map visual meaning to layer IDs.",
-				output: Output.json(),
-				messages: [
+	const { output } = await generateText({
+		model: groupingModel,
+		system:
+			"You group decomposed graphic-design layers into semantic animation units. Use the complete design for context and the numbered contact sheet to map visual meaning to layer IDs.",
+		output: Output.json(),
+		messages: [
+			{
+				role: "user",
+				content: [
 					{
-						role: "user",
-						content: [
-							{
-								type: "text",
-								text:
-									"Group the layers into at most 8 semantic units. Every layer ID must appear exactly once. Keep the full-canvas background separate. Group words from one heading, pieces of one illustration, and CTA shapes, text, or icons when they form one visual unit. Do not group items only because they are nearby.\n\n" +
-									`Layer metadata: ${metadata}\n\nResponse schema: ${schema}${correction}`,
-							},
-							{ type: "file", data: sourceUrl, mediaType: "image/jpeg" },
-							{ type: "file", data: contactSheetUrl, mediaType: "image/jpeg" },
-						],
+						type: "text",
+						text:
+							"Group the layers into at most 8 semantic units. Every layer ID must appear exactly once. Keep the full-canvas background separate. Group words from one heading, pieces of one illustration, and CTA shapes, text, or icons when they form one visual unit. Do not group items only because they are nearby.\n\n" +
+							`Layer metadata: ${metadata}\n\nResponse schema: ${schema}`,
 					},
+					{ type: "file", data: sourceUrl, mediaType: "image/jpeg" },
+					{ type: "file", data: contactSheetUrl, mediaType: "image/jpeg" },
 				],
-				maxRetries: 1,
-			});
-			const plan = groupPlanSchema.parse(output);
-			const error = validatePlan({ plan, input });
-			if (!error) return plan;
-			correction = `\n\nYour previous plan was invalid: ${error} Return a corrected complete plan.`;
-		} catch (error) {
-			const message = error instanceof Error ? error.message : "Invalid response";
-			correction = `\n\nYour previous response was invalid: ${message}. Return corrected JSON.`;
-		}
-	}
-
-	throw new Error(correction.trim());
+			},
+		],
+		maxRetries: 1,
+	});
+	const plan = groupPlanSchema.parse(output);
+	const error = validatePlan({ plan, input });
+	if (error) throw new Error(error);
+	return plan;
 }
 
 function embedGroupPlan(options: { svg: string; plan: GroupPlan }): string {
