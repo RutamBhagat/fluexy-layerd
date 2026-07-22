@@ -4,8 +4,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
 import { canRenderMediaOnWeb, renderMediaOnWeb } from "@remotion/web-renderer";
 
-import { env } from "@fluexy-layerd/env/web";
-
 import { LayeredVideo } from "@/remotion/layered-video";
 import {
   type MotionPreset,
@@ -33,6 +31,7 @@ function getH264Size({ width, height }: { width: number; height: number }) {
 
 export function useMotionStudio() {
   const [file, setFile] = useState<File | null>(null);
+  const [fileName, setFileName] = useState("");
   const [sourceUrl, setSourceUrl] = useState("");
   const [svg, setSvg] = useState("");
   const [preset, setPreset] = useState<MotionPreset>("slide-up");
@@ -63,13 +62,49 @@ export function useMotionStudio() {
 
   useEffect(() => () => renderController.current?.abort(), []);
 
+  useEffect(() => {
+    const projectId = new URLSearchParams(window.location.search).get("project");
+    if (!projectId) return;
+
+    async function loadProject() {
+      setIsConverting(true);
+
+      try {
+        const response = await fetch(`/api/projects/${projectId}`);
+        if (!response.ok) throw new Error("The saved project could not be loaded.");
+
+        const project = (await response.json()) as {
+          filename: string;
+          svg: string;
+        };
+        setFileName(project.filename);
+        setSvg(project.svg);
+        setSourceUrl(
+          URL.createObjectURL(new Blob([project.svg], { type: "image/svg+xml" })),
+        );
+      } catch (loadError) {
+        setError(
+          loadError instanceof Error
+            ? loadError.message
+            : "The saved project could not be loaded.",
+        );
+      } finally {
+        setIsConverting(false);
+      }
+    }
+
+    void loadProject();
+  }, []);
+
   function selectImage(event: ChangeEvent<HTMLInputElement>) {
     const selectedFile = event.target.files?.[0] ?? null;
     setFile(selectedFile);
+    setFileName(selectedFile?.name ?? "");
     setSourceUrl(selectedFile ? URL.createObjectURL(selectedFile) : "");
     setSvg("");
     setVideoUrl("");
     setError("");
+    window.history.replaceState(null, "", "/");
   }
 
   function selectPreset(value: MotionPreset | null) {
@@ -89,17 +124,31 @@ export function useMotionStudio() {
     formData.append("image", file);
 
     try {
-      const response = await fetch(
-        `${env.NEXT_PUBLIC_LAYERD_API_URL}/convert`,
-        {
-          method: "POST",
-          body: formData,
-        },
-      );
+      const response = await fetch("/api/convert", {
+        method: "POST",
+        body: formData,
+      });
 
       if (!response.ok)
         throw new Error("The image could not be separated into layers.");
-      setSvg(await response.text());
+      const extractedSvg = await response.text();
+      setSvg(extractedSvg);
+
+      const saveResponse = await fetch("/api/projects", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          filename: file.name,
+          svg: extractedSvg,
+        }),
+      });
+
+      if (saveResponse.ok) {
+        const project = (await saveResponse.json()) as { id: string };
+        window.history.replaceState(null, "", `/?project=${project.id}`);
+      } else {
+        setError("Layers were extracted, but the project could not be saved.");
+      }
     } catch (conversionError) {
       setError(
         conversionError instanceof Error
@@ -168,6 +217,7 @@ export function useMotionStudio() {
     error,
     extractLayers,
     file,
+    fileName,
     inputProps,
     isConverting,
     isRendering,

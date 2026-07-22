@@ -21,9 +21,12 @@ Open [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs), or convert from t
 
 ```bash
 curl -X POST http://127.0.0.1:8000/convert \
+  -H 'X-API-Key: local-layerd-key' \
   -F image=@../web/public/image.png \
   --output design.svg
 ```
+
+The API uses `local-layerd-key` for local development. Override it with the `LAYERD_API_KEY` environment variable.
 
 ## Test
 

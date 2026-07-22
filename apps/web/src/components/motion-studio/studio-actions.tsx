@@ -1,4 +1,4 @@
-import { ArrowRight, Download, LoaderCircle, Play } from "lucide-react";
+import { ArrowRight, LoaderCircle, Play } from "lucide-react";
 
 import { Button } from "@fluexy-layerd/ui/components/button";
 
@@ -25,14 +25,6 @@ export function StudioActions({
 }: StudioActionsProps) {
   return (
     <div className="flex gap-2 sm:shrink-0">
-      <Button
-        variant="outline"
-        disabled={!videoUrl}
-        render={videoUrl ? <a href={videoUrl} download="layerd-motion.mp4" /> : undefined}
-      >
-        <Download data-icon="inline-start" />
-        Download video
-      </Button>
       {!hasSvg ? (
         <Button disabled={!hasFile || isConverting} onClick={onExtractLayers}>
           {isConverting ? (

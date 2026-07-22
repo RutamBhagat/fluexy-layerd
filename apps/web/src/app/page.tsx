@@ -15,7 +15,7 @@ export default function Home() {
       <Card className="min-h-0 flex-1">
         <StudioHeader
           error={studio.error}
-          hasFile={Boolean(studio.file)}
+          hasFile={Boolean(studio.file || studio.svg)}
           hasSvg={Boolean(studio.svg)}
           isConverting={studio.isConverting}
           isRendering={studio.isRendering}
@@ -29,7 +29,7 @@ export default function Home() {
 
         <CardContent className="grid min-h-0 flex-1 gap-6 overflow-auto lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:overflow-hidden">
           <SourceImagePanel
-            fileName={studio.file?.name}
+            fileName={studio.fileName}
             isBusy={studio.isConverting || studio.isRendering}
             onSelectImage={studio.selectImage}
             sourceUrl={studio.sourceUrl}

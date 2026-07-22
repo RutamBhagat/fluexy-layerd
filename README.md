@@ -12,7 +12,7 @@ PNG, JPEG, or WebP → LayerD API → layered SVG → Remotion preset → MP4
 - Previews motion immediately with Remotion Player.
 - Includes ten deterministic presets: directional slides, fade, clean build, bounce, collage toss, radial explosion, and chaotic assembly.
 - Renders a five-second, 30 fps H.264 MP4 entirely in the browser.
-- Keeps the generated SVG in memory and uses temporary browser URLs for previews and downloads; nothing is persisted.
+- Saves generated SVG projects to Neon so signed-in users can reopen them without rerunning LayerD.
 
 ## Prerequisites
 
@@ -38,13 +38,23 @@ Create `apps/web/.env` with your [Clerk](https://clerk.com/) credentials:
 ```dotenv
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=...
 CLERK_SECRET_KEY=...
+DATABASE_URL=...
 ```
 
-The browser uses `http://127.0.0.1:8000` for LayerD by default. Override it when needed:
+Create the project table once:
+
+```bash
+npm run db:push
+```
+
+The Next.js proxy uses `http://127.0.0.1:8000` and the shared key `local-layerd-key` by default. Override them when needed:
 
 ```dotenv
-NEXT_PUBLIC_LAYERD_API_URL=http://127.0.0.1:8000
+LAYERD_API_URL=http://127.0.0.1:8000
+LAYERD_API_KEY=replace-me
 ```
+
+When overriding the key, start Python with the same value: `LAYERD_API_KEY=replace-me npm run dev:api`.
 
 Start the API and web studio in separate terminals:
 
@@ -59,9 +69,11 @@ Open [http://localhost:3001](http://localhost:3001). The LayerD API runs at `htt
 
 1. Choose a PNG, JPEG, or WebP image.
 2. Select a motion preset.
-3. Choose **Create motion** to extract the image layers.
+3. Choose **Create motion** to extract and save the image layers.
 4. Preview the animation, then choose **Render MP4**.
 5. Download the rendered video.
+
+Use **History** to reopen a saved SVG and render it with another preset without running LayerD again. Rendered MP4 files remain temporary browser downloads.
 
 The output dimensions follow the LayerD SVG. H.264 requires even dimensions, so the renderer crops at most one row or column from an odd-sized source.
 
@@ -71,6 +83,7 @@ Send an image as the `image` multipart field:
 
 ```bash
 curl -X POST http://127.0.0.1:8000/convert \
+  -H 'X-API-Key: local-layerd-key' \
   -F image=@apps/web/public/image.png \
   --output design.svg
 ```
@@ -116,4 +129,4 @@ Use a browser that supports WebCodecs with H.264 encoding. Compatibility is chec
 
 ### The web app cannot reach the API
 
-Keep the default local ports when developing: the API currently allows browser requests from `http://localhost:3001`. If the API runs elsewhere, set `NEXT_PUBLIC_LAYERD_API_URL` to its URL and update the API CORS origin in `apps/api/app.py`.
+Keep the default local ports when developing. The browser calls the authenticated Next.js `/api/convert` proxy, which calls FastAPI using the server-only `LAYERD_API_URL` and `LAYERD_API_KEY` values.

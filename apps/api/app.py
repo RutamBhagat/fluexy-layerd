@@ -1,16 +1,24 @@
 import os
+import secrets
 from contextlib import asynccontextmanager
 from typing import Annotated
 
 import torch
-from fastapi import FastAPI, File, HTTPException, UploadFile
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import Depends, FastAPI, File, Header, HTTPException, UploadFile
 from fastapi.responses import Response
 from layerd import LayerDPipeline
 from PIL import Image, UnidentifiedImageError
 
 
 pipeline: LayerDPipeline | None = None
+layerd_api_key = os.getenv("LAYERD_API_KEY", "local-layerd-key")
+
+
+def require_api_key(
+    x_api_key: Annotated[str | None, Header()] = None,
+) -> None:
+    if not secrets.compare_digest(x_api_key or "", layerd_api_key):
+        raise HTTPException(401, "Invalid API key")
 
 
 @asynccontextmanager
@@ -29,15 +37,9 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:3001"],
-    allow_methods=["POST"],
-    allow_headers=["*"],
-)
 
 
-@app.post("/convert")
+@app.post("/convert", dependencies=[Depends(require_api_key)])
 def convert_image(
     image: Annotated[UploadFile, File()],
 ) -> Response:

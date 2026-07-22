@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { UserButton } from "@clerk/nextjs";
 import { CardHeader } from "@fluexy-layerd/ui/components/card";
 
@@ -23,7 +24,6 @@ export function StudioHeader(props: StudioHeaderProps) {
   return (
     <CardHeader className="flex shrink-0 flex-row items-center justify-between gap-3 border-b">
       <div className="flex items-center gap-2">
-        <UserButton />
         <PresetSelect
           disabled={!props.hasFile || props.isRendering}
           onChange={props.onPresetChange}
@@ -32,16 +32,22 @@ export function StudioHeader(props: StudioHeaderProps) {
         {props.error && <p className="text-xs text-destructive">{props.error}</p>}
       </div>
 
-      <StudioActions
-        hasFile={props.hasFile}
-        hasSvg={props.hasSvg}
-        isConverting={props.isConverting}
-        isRendering={props.isRendering}
-        onExtractLayers={props.onExtractLayers}
-        onRenderVideo={props.onRenderVideo}
-        renderProgress={props.renderProgress}
-        videoUrl={props.videoUrl}
-      />
+      <div className="flex items-center gap-3">
+        <Link href="/history" className="text-xs text-muted-foreground hover:text-foreground">
+          History
+        </Link>
+        <StudioActions
+          hasFile={props.hasFile}
+          hasSvg={props.hasSvg}
+          isConverting={props.isConverting}
+          isRendering={props.isRendering}
+          onExtractLayers={props.onExtractLayers}
+          onRenderVideo={props.onRenderVideo}
+          renderProgress={props.renderProgress}
+          videoUrl={props.videoUrl}
+        />
+        <UserButton />
+      </div>
     </CardHeader>
   );
 }
