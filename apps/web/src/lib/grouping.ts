@@ -59,6 +59,7 @@ const provider = createOpenAICompatible({
 	name: "local-proxy",
 	apiKey: env.OPENAI_API_KEY,
 	baseURL: env.OPENAI_BASE_URL,
+	supportsStructuredOutputs: true,
 });
 const groupingModel = provider(env.OPENAI_MODEL);
 
