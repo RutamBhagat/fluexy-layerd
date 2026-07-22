@@ -52,6 +52,7 @@ export function VideoPreviewPanel({
               fps={videoFps}
               controls
               autoPlay
+              initiallyMuted
               loop
               style={{ maxHeight: "100%", maxWidth: "100%", width: "100%" }}
             />

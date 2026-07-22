@@ -360,6 +360,7 @@ source = { virtual = "." }
 dependencies = [
     { name = "fastapi", extra = ["standard"] },
     { name = "layerd" },
+    { name = "python-dotenv" },
     { name = "python-multipart" },
     { name = "transformers" },
 ]
@@ -374,6 +375,7 @@ dev = [
 requires-dist = [
     { name = "fastapi", extras = ["standard"], specifier = ">=0.116" },
     { name = "layerd", git = "https://github.com/CyberAgentAILab/LayerD.git?rev=21aef937a0371614adb4d961f52d02409cb8ecc7" },
+    { name = "python-dotenv", specifier = ">=1.1" },
     { name = "python-multipart", specifier = ">=0.0.20" },
     { name = "transformers", specifier = ">=4.37,<5" },
 ]

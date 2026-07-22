@@ -11,7 +11,7 @@
     "build": "npm run build --workspaces --if-present",
     "check-types": "npm run check-types --workspaces --if-present",
     "dev:web": "npm run dev --workspace web",
-    "dev:api": "uv run --project apps/api uvicorn app:app --app-dir apps/api --host 127.0.0.1 --port 8000",
+    "dev:api": "uv run --project apps/api uvicorn apps.api.app:app --host 127.0.0.1 --port 8000",
     "db:push": "npm run db:push --workspace @fluexy-layerd/db",
     "db:studio": "npm run db:studio --workspace @fluexy-layerd/db",
     "db:generate": "npm run db:generate --workspace @fluexy-layerd/db",
