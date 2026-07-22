@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { ChangeEvent } from "react";
 import { canRenderMediaOnWeb, renderMediaOnWeb } from "@remotion/web-renderer";
 
 import { LayeredVideo } from "@/remotion/layered-video";
@@ -96,11 +95,10 @@ export function useMotionStudio() {
     void loadProject();
   }, []);
 
-  function selectImage(event: ChangeEvent<HTMLInputElement>) {
-    const selectedFile = event.target.files?.[0] ?? null;
+  function selectImage(selectedFile: File) {
     setFile(selectedFile);
-    setFileName(selectedFile?.name ?? "");
-    setSourceUrl(selectedFile ? URL.createObjectURL(selectedFile) : "");
+    setFileName(selectedFile.name);
+    setSourceUrl(URL.createObjectURL(selectedFile));
     setSvg("");
     setVideoUrl("");
     setError("");

@@ -1,7 +1,5 @@
 "use client";
 
-import { Card, CardContent } from "@fluexy-layerd/ui/components/card";
-
 import { SourceImagePanel } from "@/components/motion-studio/source-image-panel";
 import { StudioHeader } from "@/components/motion-studio/studio-header";
 import { VideoPreviewPanel } from "@/components/motion-studio/video-preview-panel";
@@ -11,8 +9,8 @@ export default function Home() {
   const studio = useMotionStudio();
 
   return (
-    <main className="mx-auto flex h-svh min-h-0 w-full max-w-7xl overflow-hidden">
-      <Card className="min-h-0 flex-1">
+    <main className="h-svh overflow-hidden bg-muted/40 p-2">
+      <div className="mx-auto flex h-full max-w-[1600px] flex-col overflow-hidden border bg-background">
         <StudioHeader
           error={studio.error}
           hasFile={Boolean(studio.file || studio.svg)}
@@ -27,7 +25,7 @@ export default function Home() {
           videoUrl={studio.videoUrl}
         />
 
-        <CardContent className="grid min-h-0 flex-1 gap-6 overflow-auto lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:overflow-hidden">
+        <div className="grid min-h-0 flex-1 overflow-auto lg:grid-cols-[minmax(18rem,0.7fr)_minmax(0,1.3fr)] lg:divide-x lg:overflow-hidden">
           <SourceImagePanel
             fileName={studio.fileName}
             isBusy={studio.isConverting || studio.isRendering}
@@ -41,8 +39,8 @@ export default function Home() {
             svg={studio.svg}
             videoUrl={studio.videoUrl}
           />
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </main>
   );
 }

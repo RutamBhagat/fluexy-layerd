@@ -1,5 +1,3 @@
-import { Sparkles } from "lucide-react";
-
 import { Label } from "@fluexy-layerd/ui/components/label";
 import {
   Select,
@@ -24,8 +22,7 @@ export function PresetSelect({ disabled, onChange, preset }: PresetSelectProps) 
         Motion preset
       </Label>
       <Select value={preset} onValueChange={onChange} disabled={disabled}>
-        <SelectTrigger id="motion-preset" className="w-52">
-          <Sparkles className="size-3.5" />
+        <SelectTrigger id="motion-preset" className="w-44">
           <SelectValue />
         </SelectTrigger>
         <SelectContent side="bottom" align="start" alignItemWithTrigger={false}>
@@ -33,7 +30,6 @@ export function PresetSelect({ disabled, onChange, preset }: PresetSelectProps) 
             const option = motionPresets[name];
             return (
               <SelectItem key={name} value={name}>
-                <Sparkles className="size-3.5" />
                 <span className="flex flex-col">
                   <span>{option.label}</span>
                   <span className="text-[10px] text-muted-foreground">{option.description}</span>
