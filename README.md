@@ -19,6 +19,8 @@ PNG, JPEG, or WebP → LayerD → semantic groups → animated SVG → H.264 MP4
 
 ## Architecture
 
+![Fluexy LayerD architecture diagram](demo/architechture_diagram.png)
+
 The project separates expensive image understanding from predictable animation execution:
 
 1. The authenticated Next.js route forwards the uploaded image to the local FastAPI service.
