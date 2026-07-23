@@ -34,7 +34,7 @@ export default async function RootLayout({
       >
         <ClerkProvider>
           <Providers>
-            <div className="h-svh min-h-0 overflow-hidden">{children}</div>
+            <div className="h-svh min-h-0 overflow-y-auto">{children}</div>
           </Providers>
         </ClerkProvider>
       </body>
