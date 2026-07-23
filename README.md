@@ -28,7 +28,7 @@ The walkthrough covers the product rationale, end-to-end workflow, relevant code
 ## Features
 
 - Reconstructs a flat image as independently positioned SVG image layers with [LayerD](https://github.com/CyberAgentAILab/LayerD).
-- Uses a vision model to group related text, illustrations, decorations, products, logos, and calls to action into at most eight semantic units.
+- Uses a vision model to group related text, illustrations, decorations, products, logos, and calls to action into semantic units.
 - Provides ten deterministic motion presets with immediate [Remotion](https://www.remotion.dev/) previews.
 - Renders a five-second, 30 fps H.264 MP4 entirely in a compatible browser.
 - Saves self-contained SVG projects to Neon for authenticated users to reopen, reanimate, or delete.
@@ -46,7 +46,7 @@ Fluexy LayerD is inspired by [MG-Gen](https://arxiv.org/abs/2504.02361) and its 
 | Next.js | Provide the studio, API proxy, project history, and rendering interface |
 | Neon Postgres and Drizzle | Store each user's self-contained layered SVG projects |
 | Clerk | Protect conversion and project APIs and scope projects to the signed-in user |
-| Quality controls | Enforce complete layer allocation, a maximum of eight groups, background isolation, and deterministic final-frame reconstruction |
+| Quality controls | Enforce complete layer allocation, background isolation, and deterministic final-frame reconstruction |
 
 > [!NOTE]
 > Fluexy LayerD starts from a user-supplied design. Its scope is the motion-control pipeline: converting a flat visual into editable semantic layers and producing a controlled animation from them.
@@ -178,7 +178,7 @@ The response has this shape:
 
 ### Semantic planning, deterministic execution
 
-A flat bitmap has pixels but no concepts such as “headline,” “background,” or “CTA.” LayerD restores manipulable fragments, and the vision model supplies the missing semantic grouping. Its output is constrained to known roles, no more than eight groups, exactly one group per layer, and a separate full-canvas background.
+A flat bitmap has pixels but no concepts such as “headline,” “background,” or “CTA.” LayerD restores manipulable fragments, and the vision model supplies the missing semantic grouping. Its output is constrained to known roles, exactly one group per layer, and a separate full-canvas background.
 
 Animation remains a pure frame-based function:
 

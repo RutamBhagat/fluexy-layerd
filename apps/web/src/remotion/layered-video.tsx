@@ -114,6 +114,12 @@ function isBackground({
   );
 }
 
+function getRolePriority(role: string) {
+  if (role === "background") return 0;
+  if (["text", "headline", "body", "cta"].includes(role)) return 2;
+  return 1;
+}
+
 export function LayeredVideo({ svg, preset, width, height }: LayeredVideoProps) {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -136,7 +142,11 @@ export function LayeredVideo({ svg, preset, width, height }: LayeredVideoProps) 
     [groups, presetConfig.animateBackground],
   );
   const orderedGroups = useMemo(
-    () => sortLayers({ layers: animatedGroups, preset }),
+    () =>
+      sortLayers({ layers: animatedGroups, preset }).sort(
+        (first, second) =>
+          getRolePriority(first.role) - getRolePriority(second.role),
+      ),
     [animatedGroups, preset],
   );
   const order = new Map(orderedGroups.map((group, index) => [group.id, index]));

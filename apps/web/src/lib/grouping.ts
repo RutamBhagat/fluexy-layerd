@@ -26,8 +26,7 @@ const groupPlanSchema = z.object({
 				layer_ids: z.array(z.number().int()).min(1),
 			}),
 		)
-		.min(1)
-		.max(8),
+		.min(1),
 });
 
 const boxSchema = z.object({
@@ -175,7 +174,7 @@ async function requestGroupPlan(options: {
 					{
 						type: "text",
 						text:
-							"Group the layers into at most 8 semantic units. Every layer ID must appear exactly once. Keep the full-canvas background separate. Group words from one heading, pieces of one illustration, and CTA shapes, text, or icons when they form one visual unit. Do not group items only because they are nearby.\n\n" +
+							"Group the layers into animation units. Every layer ID must appear exactly once. Keep the full-canvas background separate. Text must animate independently from its surrounding section: group only words or fragments from the same text block, and never group text with panels, cards, button shapes, images, illustrations, or decorations. Group pieces of one non-text illustration when they form one visual unit. Do not group an entire poster section or group items only because they are nearby.\n\n" +
 							`Layer metadata: ${metadata}`,
 					},
 					{ type: "file", data: sourceUrl, mediaType: "image/jpeg" },
