@@ -10,12 +10,9 @@ PNG, JPEG, or WebP → LayerD → semantic groups → animated SVG → H.264 MP4
 
 ## Demo
 
-[Watch the product walkthrough on YouTube](https://www.youtube.com/watch?v=YOUR_VIDEO_ID).
+[Watch the product walkthrough on YouTube](https://youtu.be/NqWstJf0-ek).
 
 The walkthrough covers the product rationale, end-to-end workflow, relevant code, runtime logs, and persisted Neon records.
-
-> [!NOTE]
-> Replace `YOUR_VIDEO_ID` with the uploaded video's ID.
 
 ### Example outputs
 
