@@ -6,7 +6,24 @@ Turn a flat raster design into a layered motion video. Fluexy LayerD combines lo
 PNG, JPEG, or WebP → LayerD → semantic groups → animated SVG → H.264 MP4
 ```
 
-[Features](#features) • [Architecture](#architecture) • [Getting started](#getting-started) • [Usage](#usage) • [Design decisions](#design-decisions-and-trade-offs)
+[Demo](#demo) • [Features](#features) • [How it works](#how-it-works) • [Architecture](#architecture) • [Getting started](#getting-started) • [Usage](#usage) • [Design decisions](#design-decisions-and-trade-offs)
+
+## Demo
+
+[Watch the product walkthrough on YouTube](https://www.youtube.com/watch?v=YOUR_VIDEO_ID).
+
+The walkthrough covers the product rationale, end-to-end workflow, relevant code, runtime logs, and persisted Neon records.
+
+> [!NOTE]
+> Replace `YOUR_VIDEO_ID` with the uploaded video's ID.
+
+### Example outputs
+
+| Source | Motion preset | Video |
+| --- | --- | --- |
+| Example design 1 | Preset name | _Add exported MP4_ |
+| Example design 2 | Preset name | _Add exported MP4_ |
+| Example design 3 | Preset name | _Add exported MP4_ |
 
 ## Features
 
@@ -16,6 +33,23 @@ PNG, JPEG, or WebP → LayerD → semantic groups → animated SVG → H.264 MP4
 - Renders a five-second, 30 fps H.264 MP4 entirely in a compatible browser.
 - Saves self-contained SVG projects to Neon for authenticated users to reopen, reanimate, or delete.
 - Keeps rendered videos local to the browser as temporary object URLs.
+
+## How it works
+
+Fluexy LayerD is inspired by [MG-Gen](https://arxiv.org/abs/2504.02361) and its central idea of controlling video motion through explicit, editable structure. Instead of running the paper's large original model, LayerD recovers movable visual elements from a flat design, a vision-model workflow organizes them into semantic units, and Remotion applies reproducible motion controls before rendering the result as video.
+
+| Component | Role |
+| --- | --- |
+| LayerD, BiRefNet, and LaMa | Decompose the uploaded image into positioned transparent layers |
+| Vision-model workflow | Interpret the source, contact sheet, and layer geometry, then produce a validated semantic grouping plan |
+| Remotion | Preview ten selectable motion presets and render a five-second H.264 MP4 |
+| Next.js | Provide the studio, API proxy, project history, and rendering interface |
+| Neon Postgres and Drizzle | Store each user's self-contained layered SVG projects |
+| Clerk | Protect conversion and project APIs and scope projects to the signed-in user |
+| Quality controls | Enforce complete layer allocation, a maximum of eight groups, background isolation, and deterministic final-frame reconstruction |
+
+> [!NOTE]
+> Fluexy LayerD starts from a user-supplied design. Its scope is the motion-control pipeline: converting a flat visual into editable semantic layers and producing a controlled animation from them.
 
 ## Architecture
 
@@ -144,7 +178,7 @@ The response has this shape:
 
 ### Semantic planning, deterministic execution
 
-A flat bitmap has pixels but no concepts such as “headline,” “background,” or “CTA.” LayerD restores manipulable fragments, and the vision model supplies the missing semantic grouping. Its output is constrained to known roles, no more than eight groups, exactly one assignment per layer, and a separate full-canvas background.
+A flat bitmap has pixels but no concepts such as “headline,” “background,” or “CTA.” LayerD restores manipulable fragments, and the vision model supplies the missing semantic grouping. Its output is constrained to known roles, no more than eight groups, exactly one group per layer, and a separate full-canvas background.
 
 Animation remains a pure frame-based function:
 
