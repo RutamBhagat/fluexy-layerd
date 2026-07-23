@@ -19,11 +19,17 @@ The walkthrough covers the product rationale, end-to-end workflow, relevant code
 
 ### Example outputs
 
-| Source | Motion preset | Video |
-| --- | --- | --- |
-| Example design 1 | Preset name | _Add exported MP4_ |
-| Example design 2 | Preset name | _Add exported MP4_ |
-| Example design 3 | Preset name | _Add exported MP4_ |
+The animated previews play directly on GitHub. Select one to open the full MP4.
+
+[Input designs](demo/input/) • [Output previews](apps/web/public/output/) • [MP4 files](demo/output/)
+
+| Input | Output |
+| --- | --- |
+| ![Input design 1](demo/input/1.png) | [![Animated output 1](apps/web/public/output/1.gif)](demo/output/1.mp4) |
+| ![Input design 2](demo/input/2.jpg) | [![Animated output 2](apps/web/public/output/2.gif)](demo/output/2.mp4) |
+| ![Input design 3](demo/input/3.png) | [![Animated output 3](apps/web/public/output/3.gif)](demo/output/3.mp4) |
+| ![Input design 4](demo/input/4.png) | [![Animated output 4](apps/web/public/output/4.gif)](demo/output/4.mp4) |
+| ![Input design 5](demo/input/5.png) | [![Animated output 5](apps/web/public/output/5.gif)](demo/output/5.mp4) |
 
 ## Features
 
