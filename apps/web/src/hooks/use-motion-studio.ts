@@ -64,7 +64,9 @@ export function useMotionStudio() {
   useEffect(() => () => renderController.current?.abort(), []);
 
   useEffect(() => {
-    const projectId = new URLSearchParams(window.location.search).get("project");
+    const projectId = new URLSearchParams(window.location.search).get(
+      "project",
+    );
     if (!projectId) return;
 
     async function loadProject() {
@@ -72,7 +74,8 @@ export function useMotionStudio() {
 
       try {
         const response = await fetch(`/api/projects/${projectId}`);
-        if (!response.ok) throw new Error("The saved project could not be loaded.");
+        if (!response.ok)
+          throw new Error("The saved project could not be loaded.");
 
         const project = (await response.json()) as {
           filename: string;
@@ -81,7 +84,9 @@ export function useMotionStudio() {
         setFileName(project.filename);
         setSvg(project.svg);
         setSourceUrl(
-          URL.createObjectURL(new Blob([project.svg], { type: "image/svg+xml" })),
+          URL.createObjectURL(
+            new Blob([project.svg], { type: "image/svg+xml" }),
+          ),
         );
       } catch (loadError) {
         setError(
@@ -134,7 +139,8 @@ export function useMotionStudio() {
           error?: string;
         } | null;
         throw new Error(
-          result?.error ?? "The image could not be separated and grouped into layers.",
+          result?.error ??
+            "The image could not be separated and grouped into layers.",
         );
       }
       const extractedSvg = await response.text();
@@ -149,11 +155,11 @@ export function useMotionStudio() {
         }),
       });
 
-      if (saveResponse.ok) {
+      if (!saveResponse.ok) {
+        setError("Layers were extracted, but the project could not be saved.");
+      } else {
         const project = (await saveResponse.json()) as { id: string };
         router.replace(`/?project=${project.id}`, { scroll: false });
-      } else {
-        setError("Layers were extracted, but the project could not be saved.");
       }
     } catch (conversionError) {
       setError(
