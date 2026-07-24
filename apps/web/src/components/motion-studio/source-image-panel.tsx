@@ -1,3 +1,4 @@
+import { cn } from "@fluexy-layerd/ui/lib/utils";
 import { ImagePlus } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 
@@ -29,7 +30,7 @@ export function SourceImagePanel({
   });
 
   return (
-    <section className="flex min-h-[28rem] flex-col lg:min-h-0">
+    <section className="flex min-h-112 flex-col lg:min-h-0">
       <div className="flex h-10 shrink-0 items-center justify-between gap-3 border-b px-3">
         <h2 className="text-xs font-medium">Source image</h2>
         <span className="max-w-48 truncate text-xs text-muted-foreground">
@@ -41,9 +42,13 @@ export function SourceImagePanel({
         <div
           {...getRootProps({
             "aria-label": "Choose or drop a source image",
-            className: `group relative flex min-h-0 flex-1 cursor-pointer items-center justify-center overflow-hidden border border-dashed outline-none transition-colors focus-visible:ring-1 focus-visible:ring-ring ${
-              isDragActive ? "border-foreground bg-muted" : "bg-muted/20 hover:bg-muted/40"
-            } ${isBusy ? "pointer-events-none opacity-50" : ""}`,
+            className: cn(
+              "group relative flex min-h-0 flex-1 cursor-pointer items-center justify-center overflow-hidden border border-dashed outline-none transition-colors focus-visible:ring-1 focus-visible:ring-ring",
+              isDragActive
+                ? "border-foreground bg-muted"
+                : "bg-muted/20 hover:bg-muted/40",
+              isBusy && "pointer-events-none opacity-50",
+            ),
           })}
         >
           <input {...getInputProps()} />
@@ -62,9 +67,11 @@ export function SourceImagePanel({
             <div className="flex flex-col items-center gap-2 text-muted-foreground">
               <ImagePlus className="size-5" />
               <p className="text-xs text-foreground">
-                {isDragActive ? "Drop image here" : "Drop image or click to browse"}
+                {isDragActive
+                  ? "Drop image here"
+                  : "Drop image or click to browse"}
               </p>
-              <p className="text-[10px]">PNG, JPEG, or WebP</p>
+              <p className="text-[10px]">PNG, JPG, JPEG, or WebP</p>
             </div>
           )}
         </div>

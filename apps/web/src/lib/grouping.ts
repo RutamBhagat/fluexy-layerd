@@ -182,7 +182,7 @@ async function requestGroupPlan(options: {
 				],
 			},
 		],
-		maxRetries: 1,
+		maxRetries: 0,
 	});
 	const error = validatePlan({ plan: output, input });
 	if (error) throw new Error(error);
