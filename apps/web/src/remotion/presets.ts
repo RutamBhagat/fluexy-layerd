@@ -19,7 +19,12 @@ type TransformOptions = { layer: MotionLayer; width: number; height: number };
 type Preset = {
   label: string;
   description: string;
-  order: "document" | "x-ascending" | "x-descending" | "y-ascending" | "y-descending";
+  order:
+    | "document"
+    | "x-ascending"
+    | "x-descending"
+    | "y-ascending"
+    | "y-descending";
   animateBackground: boolean;
   easing: "linear" | Partial<SpringConfig>;
   opacityAt: number;
@@ -37,8 +42,17 @@ function preset({
   animateBackground = true,
   easing = defaultSpring,
   opacityAt = 0.2,
-}: Pick<Preset, "label" | "description" | "getInitialTransform"> & Partial<Preset>): Preset {
-  return { label, description, getInitialTransform, order, animateBackground, easing, opacityAt };
+}: Pick<Preset, "label" | "description" | "getInitialTransform"> &
+  Partial<Preset>): Preset {
+  return {
+    label,
+    description,
+    getInitialTransform,
+    order,
+    animateBackground,
+    easing,
+    opacityAt,
+  };
 }
 
 function slideUp({ layer, height }: TransformOptions) {
@@ -69,7 +83,9 @@ function bounce({ layer, height }: TransformOptions) {
 function toss({ layer, width, height }: TransformOptions) {
   const fromRight = random(`${layer.id}-toss-side`) > 0.5;
   return {
-    x: fromRight ? width - layer.x + layer.width + 48 : -(layer.x + layer.width + 48),
+    x: fromRight
+      ? width - layer.x + layer.width + 48
+      : -(layer.x + layer.width + 48),
     y: (random(`${layer.id}-toss-y`) - 0.5) * height * 0.5,
     scale: 0.75,
     rotation: random(`${layer.id}-toss-rotation`) * 50 - 25,
@@ -87,8 +103,14 @@ function radial({ layer, width, height }: TransformOptions) {
   }
 
   const length = Math.hypot(x, y);
-  const distance = Math.hypot(width, height) + Math.max(layer.width, layer.height);
-  return { x: (x / length) * distance, y: (y / length) * distance, scale: 1, rotation: 0 };
+  const distance =
+    Math.hypot(width, height) + Math.max(layer.width, layer.height);
+  return {
+    x: (x / length) * distance,
+    y: (y / length) * distance,
+    scale: 1,
+    rotation: 0,
+  };
 }
 
 function chaos({ layer, width, height }: TransformOptions) {
@@ -102,44 +124,69 @@ function chaos({ layer, width, height }: TransformOptions) {
 
 export const motionPresets = {
   "slide-up": preset({
-    label: "Slide up", description: "Bottom to top", getInitialTransform: slideUp,
-    order: "y-descending", animateBackground: false,
+    label: "Slide up",
+    description: "Bottom to top",
+    getInitialTransform: slideUp,
+    order: "y-descending",
+    animateBackground: false,
   }),
   "slide-down": preset({
-    label: "Slide down", description: "Top to bottom", getInitialTransform: slideDown,
-    order: "y-ascending", animateBackground: false,
+    label: "Slide down",
+    description: "Top to bottom",
+    getInitialTransform: slideDown,
+    order: "y-ascending",
+    animateBackground: false,
   }),
   "slide-left": preset({
-    label: "Slide left", description: "Right to left", getInitialTransform: slideLeft,
-    order: "x-descending", animateBackground: false,
+    label: "Slide left",
+    description: "Right to left",
+    getInitialTransform: slideLeft,
+    order: "x-descending",
+    animateBackground: false,
   }),
   "slide-right": preset({
-    label: "Slide right", description: "Left to right", getInitialTransform: slideRight,
-    order: "x-ascending", animateBackground: false,
+    label: "Slide right",
+    description: "Left to right",
+    getInitialTransform: slideRight,
+    order: "x-ascending",
+    animateBackground: false,
   }),
   "fade-in": preset({
-    label: "Fade in", description: "Transparent to visible",
-    getInitialTransform: () => restingTransform, easing: "linear", opacityAt: 1,
+    label: "Fade in",
+    description: "Transparent to visible",
+    getInitialTransform: () => restingTransform,
+    easing: "linear",
+    opacityAt: 1,
   }),
   "clean-build": preset({
-    label: "Clean build", description: "Soft staggered rise",
-    getInitialTransform: () => ({ ...restingTransform, y: 48 }), easing: "linear",
+    label: "Clean build",
+    description: "Soft staggered rise",
+    getInitialTransform: () => ({ ...restingTransform, y: 48 }),
+    easing: "linear",
   }),
   "bounce-in": preset({
-    label: "Bounce in", description: "Playful spring entrance", getInitialTransform: bounce,
+    label: "Bounce in",
+    description: "Playful spring entrance",
+    getInitialTransform: bounce,
     easing: { damping: 8, mass: 0.7, stiffness: 150 },
   }),
   "collage-toss": preset({
-    label: "Collage toss", description: "Tossed in from the sides", getInitialTransform: toss,
+    label: "Collage toss",
+    description: "Tossed in from the sides",
+    getInitialTransform: toss,
     easing: { damping: 11, mass: 0.8, stiffness: 135 },
   }),
   "radial-explosion": preset({
-    label: "Radial explosion", description: "Edges to final position", getInitialTransform: radial,
+    label: "Radial explosion",
+    description: "Edges to final position",
+    getInitialTransform: radial,
     easing: { damping: 16, mass: 0.75, stiffness: 125 },
   }),
   "chaotic-to-organized": preset({
-    label: "Chaotic to organized", description: "Scattered pieces assemble",
-    getInitialTransform: chaos, easing: { damping: 14, mass: 0.9, stiffness: 110 },
+    label: "Chaotic to organized",
+    description: "Scattered pieces assemble",
+    getInitialTransform: chaos,
+    easing: { damping: 14, mass: 0.9, stiffness: 110 },
   }),
 } as const;
 
