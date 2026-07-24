@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { canRenderMediaOnWeb, renderMediaOnWeb } from "@remotion/web-renderer";
+import { useRouter } from "next/navigation";
 
 import { LayeredVideo } from "@/remotion/layered-video";
 import {
@@ -29,6 +30,7 @@ function getH264Size({ width, height }: { width: number; height: number }) {
 }
 
 export function useMotionStudio() {
+  const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
   const [fileName, setFileName] = useState("");
   const [sourceUrl, setSourceUrl] = useState("");
@@ -102,7 +104,7 @@ export function useMotionStudio() {
     setSvg("");
     setVideoUrl("");
     setError("");
-    window.history.replaceState(null, "", "/");
+    router.replace("/", { scroll: false });
   }
 
   function selectPreset(value: MotionPreset | null) {
@@ -149,7 +151,7 @@ export function useMotionStudio() {
 
       if (saveResponse.ok) {
         const project = (await saveResponse.json()) as { id: string };
-        window.history.replaceState(null, "", `/?project=${project.id}`);
+        router.replace(`/?project=${project.id}`, { scroll: false });
       } else {
         setError("Layers were extracted, but the project could not be saved.");
       }
